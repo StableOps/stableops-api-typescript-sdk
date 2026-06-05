@@ -85,7 +85,7 @@ verification, and wallet integration examples, see the official documentation:
 
 ## Supported Chains and Assets
 
-The public SDK types currently include:
+This SDK supports:
 
 - Chains: Ethereum, Base, Arbitrum, Polygon, TRON, Solana, and supported testnets.
 - Assets: USDC and USDT.

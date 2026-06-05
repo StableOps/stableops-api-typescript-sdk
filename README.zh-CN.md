@@ -77,7 +77,7 @@ console.log(order.paymentInstructions)
 
 ## 支持的链和资产
 
-当前 public SDK types 包含：
+当前 SDK 支持：
 
 - 链：Ethereum、Base、Arbitrum、Polygon、TRON、Solana 以及支持的测试网。
 - 资产：USDC 和 USDT。
