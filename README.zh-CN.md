@@ -90,4 +90,4 @@ console.log(order.paymentInstructions)
 
 ## License
 
-请查看仓库中的 License 文件。
+本 SDK 使用 `Apache-2.0` 许可证。详见 [LICENSE](./LICENSE)。

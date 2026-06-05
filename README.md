@@ -100,4 +100,4 @@ chains, assets, and environment-specific setup:
 
 ## License
 
-See the repository license.
+This SDK is licensed under `Apache-2.0`. See [LICENSE](./LICENSE).
