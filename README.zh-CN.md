@@ -66,6 +66,20 @@ const order = await stableops.paymentOrders.create(
 console.log(order.paymentInstructions)
 ```
 
+Webhook 验签和 Mock Server 使用独立的 Node.js 子路径入口：
+
+```ts
+import {
+  SIGNATURE_HEADER,
+  verifySignature,
+} from '@stableops/api-sdk/webhooks'
+import { MockServer } from '@stableops/api-sdk/mock'
+```
+
+默认的 `@stableops/api-sdk` 入口不引入 Node `crypto` 或 `http` 模块。因此，只要
+服务端 Edge Runtime 提供 `fetch`、`AbortController` 和 `crypto.randomUUID`，
+就可以使用 API Client。
+
 前端只需要拿到订单 id、金额和 `paymentInstructions`。API Key 和创建订单的逻辑应始终放在服务端。
 
 ## 官方文档

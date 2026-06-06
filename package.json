@@ -6,6 +6,19 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "webhooks": [
+        "dist/webhooks.d.ts"
+      ],
+      "mock": [
+        "dist/mock.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "import": {
@@ -16,8 +29,32 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
+    },
+    "./webhooks": {
+      "import": {
+        "types": "./dist/webhooks.d.mts",
+        "default": "./dist/webhooks.mjs"
+      },
+      "require": {
+        "types": "./dist/webhooks.d.ts",
+        "default": "./dist/webhooks.js"
+      }
+    },
+    "./mock": {
+      "import": {
+        "types": "./dist/mock.d.mts",
+        "default": "./dist/mock.mjs"
+      },
+      "require": {
+        "types": "./dist/mock.d.ts",
+        "default": "./dist/mock.js"
+      }
     }
   },
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
   "files": [
     "dist"
   ],

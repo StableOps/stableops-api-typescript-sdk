@@ -43,6 +43,7 @@ export type RequestInit = {
   body?: unknown
   query?: Record<string, string | number | undefined>
   idempotencyKey?: string
+  retryable?: boolean
 }
 
 const DEFAULT_BASE_URL = 'https://api.stableops.dev'
@@ -117,6 +118,7 @@ export class HttpClient {
     if (idempotencyKey) headers[IDEMPOTENCY_HEADER] = idempotencyKey
 
     const body = init.body === undefined ? undefined : JSON.stringify(init.body)
+    const canRetry = init.method === 'GET' || init.retryable === true
 
     for (let attempt = 0; ; attempt++) {
       // 每次尝试独立的 AbortController + 计时器：超时表现为 AbortError，归入可重试错误。
@@ -134,7 +136,7 @@ export class HttpClient {
         const parsed = text.length === 0 ? null : safeJsonParse(text)
         if (res.ok) return parsed as T
 
-        if (isRetryableStatus(res.status) && attempt < this.maxRetries) {
+        if (canRetry && isRetryableStatus(res.status) && attempt < this.maxRetries) {
           // 可重试状态且仍有额度：Retry-After 优先，否则指数退避 + jitter。
           const retryAfterMs = parseRetryAfterMs(res.headers.get('retry-after'))
           retryDelayMs = computeDelayMs(attempt, this.backoff, this.random, retryAfterMs)
@@ -151,7 +153,7 @@ export class HttpClient {
       } catch (err) {
         // 已是业务错误（4xx / 已耗尽）：原样抛出，不再重试。
         if (err instanceof StableOpsError) throw err
-        if (isRetryableError(err) && attempt < this.maxRetries) {
+        if (canRetry && isRetryableError(err) && attempt < this.maxRetries) {
           // 网络错误 / 超时且仍有额度：纯指数退避（无 Retry-After 可循）。
           retryDelayMs = computeDelayMs(attempt, this.backoff, this.random)
         } else {

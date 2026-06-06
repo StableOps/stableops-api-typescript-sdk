@@ -72,6 +72,20 @@ const order = await stableops.paymentOrders.create(
 console.log(order.paymentInstructions)
 ```
 
+Webhook verification and the mock server use explicit Node-only subpath exports:
+
+```ts
+import {
+  SIGNATURE_HEADER,
+  verifySignature,
+} from '@stableops/api-sdk/webhooks'
+import { MockServer } from '@stableops/api-sdk/mock'
+```
+
+The default `@stableops/api-sdk` entry does not import Node `crypto` or `http`
+modules, so edge-compatible server runtimes can use the API client when they
+provide `fetch`, `AbortController`, and `crypto.randomUUID`.
+
 Return only the order id, amount, and `paymentInstructions` to your frontend.
 The actual API key and order creation flow should stay on your server.
 

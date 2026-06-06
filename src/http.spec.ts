@@ -211,7 +211,28 @@ describe('HttpClient.request — 超时（AbortController）', () => {
 })
 
 describe('HttpClient.request — 幂等键', () => {
-  it('写请求 500 → 200：两次尝试复用同一个 idempotency-key（核心安全断言）', async () => {
+  it('普通 POST 遇到 500 不自动重试', async () => {
+    let hits = 0
+    server.use(
+      http.post(ORDERS, () => {
+        hits++
+        return HttpResponse.json({ code: 'server_error' }, { status: 500 })
+      }),
+    )
+
+    const err = await rejection(
+      makeClient().request({
+        method: 'POST',
+        path: '/v1/payment-orders',
+        body: { amount: '1' },
+      }),
+    )
+
+    expect(err.status).toBe(500)
+    expect(hits).toBe(1)
+  })
+
+  it('显式可重试 POST 在 500 → 200 时复用同一个 idempotency-key', async () => {
     const keys: (string | null)[] = []
     server.use(
       http.post(
@@ -231,6 +252,7 @@ describe('HttpClient.request — 幂等键', () => {
       method: 'POST',
       path: '/v1/payment-orders',
       body: { amount: '1' },
+      retryable: true,
     })
     expect(data).toEqual({ ok: true })
     expect(keys).toHaveLength(2)

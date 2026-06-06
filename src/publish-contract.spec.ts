@@ -10,6 +10,7 @@ describe('publish contract', () => {
     const pkg = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
       private?: boolean
       publishConfig?: { access?: string }
+      exports?: Record<string, unknown>
       dependencies?: Record<string, string>
       peerDependencies?: Record<string, string>
       optionalDependencies?: Record<string, string>
@@ -18,6 +19,8 @@ describe('publish contract', () => {
 
     expect(pkg.private).not.toBe(true)
     expect(pkg.publishConfig?.access).toBe('public')
+    expect(pkg.exports).toHaveProperty('./webhooks')
+    expect(pkg.exports).toHaveProperty('./mock')
 
     const dependencyEntries = Object.entries({
       ...pkg.dependencies,
@@ -34,6 +37,13 @@ describe('publish contract', () => {
     const source = readSourceFiles(join(packageRoot, 'src')).join('\n')
 
     expect(source).not.toMatch(/from ['"]@stableops\/(?:shared|webhook)['"]/u)
+  })
+
+  it('keeps Node-only webhook and mock utilities out of the main entry', () => {
+    const mainEntry = readFileSync(join(packageRoot, 'src/index.ts'), 'utf8')
+
+    expect(mainEntry).not.toMatch(/from ['"]\.\/signature['"]/u)
+    expect(mainEntry).not.toMatch(/from ['"]\.\/mock-server['"]/u)
   })
 })
 

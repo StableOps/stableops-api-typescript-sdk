@@ -12,6 +12,8 @@ export type MockServerOptions = {
   host?: string
   // 测试时常希望注入固定 id 生成器，便于断言。
   idFactory?: () => string
+  // 与资源 id 分离，避免固定 id 时所有轮换都得到同一个 secret。
+  secretFactory?: () => string
 }
 
 type PaymentOrder = {
@@ -20,7 +22,14 @@ type PaymentOrder = {
   scenario: string
   amount: string
   settlement_asset: string
-  status: 'created' | 'detected' | 'confirmed' | 'finalized' | 'reverted' | 'canceled'
+  status:
+    | 'created'
+    | 'detected'
+    | 'confirmed'
+    | 'finalized'
+    | 'reverted'
+    | 'expired'
+    | 'canceled'
   expires_at: string | null
   metadata: unknown
   created_at: string
@@ -34,6 +43,7 @@ type WebhookEndpoint = {
   url: string
   description: string | null
   enabled_events: string[]
+  redact_metadata: boolean
   disabled_at: string | null
   created_at: string
   secret: string
@@ -45,9 +55,11 @@ export class MockServer {
   private readonly endpoints = new Map<string, WebhookEndpoint>()
   private readonly idempotency = new Map<string, PaymentOrder>()
   private readonly idFactory: () => string
+  private readonly secretFactory: () => string
 
   constructor(private readonly options: MockServerOptions = {}) {
     this.idFactory = options.idFactory ?? (() => randomUUID())
+    this.secretFactory = options.secretFactory ?? (() => randomUUID())
     this.server = createServer((req, res) => this.handle(req, res))
   }
 
@@ -107,7 +119,21 @@ export class MockServer {
         return this.createEndpoint(body, res)
       }
       if (req.method === 'GET' && url.pathname === '/v1/webhook-endpoints') {
-        return json(res, 200, { items: Array.from(this.endpoints.values()) })
+        return json(res, 200, {
+          items: Array.from(this.endpoints.values(), (endpoint) =>
+            webhookEndpointResponse(endpoint),
+          ),
+        })
+      }
+      const endpointMatch = url.pathname.match(/^\/v1\/webhook-endpoints\/([^/]+)$/u)
+      if (req.method === 'PATCH' && endpointMatch) {
+        return this.updateEndpoint(endpointMatch[1], body, res)
+      }
+      const rotateMatch = url.pathname.match(
+        /^\/v1\/webhook-endpoints\/([^/]+)\/rotate-secret$/u,
+      )
+      if (req.method === 'POST' && rotateMatch) {
+        return this.rotateEndpointSecret(rotateMatch[1], res)
       }
 
       json(res, 404, { code: 'not_found' })
@@ -169,18 +195,42 @@ export class MockServer {
   private createEndpoint(body: unknown, res: ServerResponse) {
     const input = body as Record<string, unknown>
     const id = this.idFactory()
-    const secret = `whsec_mock_${id.slice(0, 12)}`
+    const secret = `whsec_mock_${this.secretFactory().slice(0, 12)}`
     const endpoint: WebhookEndpoint = {
       id,
       url: String(input.url ?? ''),
       description: (input.description as string | null) ?? null,
       enabled_events: (input.enabled_events as string[]) ?? [],
+      redact_metadata: (input.redact_metadata as boolean | undefined) ?? false,
       disabled_at: null,
       created_at: new Date().toISOString(),
       secret,
     }
     this.endpoints.set(id, endpoint)
-    json(res, 201, endpoint)
+    json(res, 201, webhookEndpointResponse(endpoint, true))
+  }
+
+  private updateEndpoint(id: string, body: unknown, res: ServerResponse) {
+    const endpoint = this.endpoints.get(id)
+    if (!endpoint) return json(res, 404, { code: 'not_found' })
+    const input = body as Record<string, unknown>
+    if ('description' in input) {
+      endpoint.description = (input.description as string | null) ?? null
+    }
+    if ('enabled_events' in input) {
+      endpoint.enabled_events = input.enabled_events as string[]
+    }
+    if ('redact_metadata' in input) {
+      endpoint.redact_metadata = input.redact_metadata as boolean
+    }
+    json(res, 200, webhookEndpointResponse(endpoint))
+  }
+
+  private rotateEndpointSecret(id: string, res: ServerResponse) {
+    const endpoint = this.endpoints.get(id)
+    if (!endpoint) return json(res, 404, { code: 'not_found' })
+    endpoint.secret = `whsec_mock_${this.secretFactory().slice(0, 12)}`
+    json(res, 200, webhookEndpointResponse(endpoint, true))
   }
 
   // 暴露给测试：触发一次签名后的“delivery”，便于 webhook verifier 端到端测试。
@@ -218,4 +268,12 @@ function headerValue(req: IncomingMessage, name: string): string | undefined {
   const raw = req.headers[name]
   if (Array.isArray(raw)) return raw[0]
   return raw
+}
+
+function webhookEndpointResponse(
+  endpoint: WebhookEndpoint,
+  includeSecret = false,
+): Omit<WebhookEndpoint, 'secret'> & { secret?: string } {
+  const { secret, ...response } = endpoint
+  return includeSecret ? { ...response, secret } : response
 }
