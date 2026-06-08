@@ -82,7 +82,9 @@ export class HttpClient {
 
   constructor(options: ClientOptions) {
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/u, '')
-    this.fetchImpl = options.fetch ?? fetch
+    // 原生 fetch 必须以 window/globalThis 为 this 调用；存成实例字段后用 this.fetchImpl(...)
+    // 调用会把 this 变成本类实例，浏览器报 "Illegal invocation"。回退到全局 fetch 时绑定 this。
+    this.fetchImpl = options.fetch ?? fetch.bind(globalThis)
     this.headers = {
       'content-type': 'application/json',
       accept: 'application/json',
