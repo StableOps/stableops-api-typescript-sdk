@@ -100,6 +100,7 @@ type WirePaymentOrder = {
   merchant_order_id: string
   scenario: string
   amount: string
+  requested_amount: string
   settlement_asset: string
   status: string
   expires_at: string | null
@@ -161,6 +162,7 @@ function toCreateWire(input: CreatePaymentOrderInput) {
     merchant_order_id: input.merchantOrderId,
     scenario: input.scenario,
     amount: input.amount,
+    amount_mode: input.amountMode,
     settlement_asset: input.settlementAsset,
     accepted_assets: input.acceptedAssets.map((entry) => ({
       chain: entry.chain,
@@ -177,6 +179,7 @@ function fromWire(wire: WirePaymentOrder): PaymentOrder {
     merchantOrderId: wire.merchant_order_id,
     scenario: wire.scenario as PaymentOrder['scenario'],
     amount: wire.amount,
+    requestedAmount: wire.requested_amount,
     settlementAsset: wire.settlement_asset as PaymentOrder['settlementAsset'],
     status: wire.status as PaymentOrder['status'],
     expiresAt: wire.expires_at,

@@ -53,6 +53,8 @@ export type WebhookDeliveryStatus =
 export type CreatePaymentOrderInput = {
   merchantOrderId: string
   amount: string
+  // 'auto' 让服务端把金额微调到唯一（SHARED 地址免手动错开金额）；省略即默认 'exact'。
+  amountMode?: 'exact' | 'auto'
   settlementAsset: Asset
   acceptedAssets: AcceptedAssetInput[]
   scenario?: PaymentOrderScenario
@@ -71,6 +73,8 @@ export type PaymentOrder = {
   merchantOrderId: string
   scenario: PaymentOrderScenario
   amount: string
+  // 商户传入的基准金额；exact 单 == amount，auto 单为微调前金额（对账用）。
+  requestedAmount: string
   settlementAsset: Asset
   status: PaymentOrderStatus
   expiresAt: string | null
