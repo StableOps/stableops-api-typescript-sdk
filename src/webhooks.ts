@@ -148,6 +148,7 @@ type WireWebhookDelivery = {
   succeeded_at: string | null
   dead_lettered_at: string | null
   created_at: string
+  payload: Record<string, unknown>
 }
 
 type WireReplayDeadLettersResult = {
@@ -186,5 +187,6 @@ function fromWireDelivery(wire: WireWebhookDelivery): WebhookDelivery {
     succeededAt: wire.succeeded_at,
     deadLetteredAt: wire.dead_lettered_at,
     createdAt: wire.created_at,
+    payload: wire.payload,
   }
 }

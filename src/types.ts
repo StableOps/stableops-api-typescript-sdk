@@ -175,6 +175,8 @@ export type WebhookDelivery = {
   succeededAt: string | null
   deadLetteredAt: string | null
   createdAt: string
+  // 完整事件 payload（与 replay 复用同一份）。
+  payload: Record<string, unknown>
 }
 
 export type ReplayDeliveryResult = {
