@@ -100,7 +100,7 @@ type WirePaymentOrder = {
   merchant_order_id: string
   amount: string
   requested_amount: string
-  settlement_asset: string
+  settlement_asset?: string
   status: string
   expires_at: string | null
   metadata: unknown
@@ -140,7 +140,7 @@ type WireNormalizedEventDetail = WireNormalizedEvent & {
     id: string
     merchant_order_id: string
     status: string
-    settlement_asset: string
+    settlement_asset?: string
     amount: string
   } | null
   deliveries: {
@@ -161,7 +161,6 @@ function toCreateWire(input: CreatePaymentOrderInput) {
     merchant_order_id: input.merchantOrderId,
     amount: input.amount,
     amount_mode: input.amountMode,
-    settlement_asset: input.settlementAsset,
     accepted_assets: input.acceptedAssets.map((entry) => ({
       chain: entry.chain,
       asset: entry.asset,
@@ -241,7 +240,7 @@ function fromWireEventDetail(wire: WireNormalizedEventDetail): NormalizedEventDe
           id: wire.payment_order.id,
           merchantOrderId: wire.payment_order.merchant_order_id,
           status: wire.payment_order.status as PaymentOrderStatus,
-          settlementAsset: wire.payment_order.settlement_asset as Asset,
+          settlementAsset: wire.payment_order.settlement_asset as Asset | undefined,
           amount: wire.payment_order.amount,
         }
       : null,

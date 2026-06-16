@@ -49,7 +49,6 @@ export type CreatePaymentOrderInput = {
   amount: string
   // 'auto' 让服务端把金额微调到唯一（SHARED 地址免手动错开金额）；省略即默认 'exact'。
   amountMode?: 'exact' | 'auto'
-  settlementAsset: Asset
   acceptedAssets: AcceptedAssetInput[]
   expiresAt?: string
   metadata?: Record<string, unknown>
@@ -67,7 +66,7 @@ export type PaymentOrder = {
   amount: string
   // 商户传入的基准金额；exact 单 == amount，auto 单为微调前金额（对账用）。
   requestedAmount: string
-  settlementAsset: Asset
+  settlementAsset?: Asset
   status: PaymentOrderStatus
   expiresAt: string | null
   metadata: unknown
@@ -114,7 +113,7 @@ export type EventPaymentOrderSummary = {
   id: string
   merchantOrderId: string
   status: PaymentOrderStatus
-  settlementAsset: Asset
+  settlementAsset?: Asset
   amount: string
 }
 

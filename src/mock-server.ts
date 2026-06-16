@@ -156,7 +156,7 @@ export class MockServer {
       merchant_order_id: String(input.merchant_order_id ?? ''),
       amount: String(input.amount ?? '0'),
       requested_amount: String(input.amount ?? '0'),
-      settlement_asset: String(input.settlement_asset ?? 'USDC'),
+      settlement_asset: 'USDC',
       status: 'created',
       expires_at: (input.expires_at as string | undefined) ?? null,
       metadata: input.metadata ?? null,

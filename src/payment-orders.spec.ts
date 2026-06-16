@@ -45,7 +45,6 @@ describe('PaymentOrdersApi', () => {
       {
         merchantOrderId: 'merchant_1',
         amount: '12.00',
-        settlementAsset: 'USDC',
         acceptedAssets: [
           { chain: 'base', asset: 'USDC' },
           { chain: 'tron', asset: 'USDT' },
