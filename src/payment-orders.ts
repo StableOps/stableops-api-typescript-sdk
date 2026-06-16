@@ -98,7 +98,6 @@ export class EventsApi {
 type WirePaymentOrder = {
   id: string
   merchant_order_id: string
-  scenario: string
   amount: string
   requested_amount: string
   settlement_asset: string
@@ -160,7 +159,6 @@ type WireNormalizedEventDetail = WireNormalizedEvent & {
 function toCreateWire(input: CreatePaymentOrderInput) {
   return {
     merchant_order_id: input.merchantOrderId,
-    scenario: input.scenario,
     amount: input.amount,
     amount_mode: input.amountMode,
     settlement_asset: input.settlementAsset,
@@ -177,7 +175,6 @@ function fromWire(wire: WirePaymentOrder): PaymentOrder {
   return {
     id: wire.id,
     merchantOrderId: wire.merchant_order_id,
-    scenario: wire.scenario as PaymentOrder['scenario'],
     amount: wire.amount,
     requestedAmount: wire.requested_amount,
     settlementAsset: wire.settlement_asset as PaymentOrder['settlementAsset'],

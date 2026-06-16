@@ -23,12 +23,6 @@ export type PaymentOrderStatus =
   | 'expired'
   | 'canceled'
 
-export type PaymentOrderScenario =
-  | 'saas_subscription'
-  | 'trading_deposit'
-  | 'agent_workflow'
-  | 'generic'
-
 export type AcceptedAssetInput = { chain: ChainId; asset: Asset }
 
 export type WebhookEventType =
@@ -57,7 +51,6 @@ export type CreatePaymentOrderInput = {
   amountMode?: 'exact' | 'auto'
   settlementAsset: Asset
   acceptedAssets: AcceptedAssetInput[]
-  scenario?: PaymentOrderScenario
   expiresAt?: string
   metadata?: Record<string, unknown>
 }
@@ -71,7 +64,6 @@ export type PaymentOrderInstruction = {
 export type PaymentOrder = {
   id: string
   merchantOrderId: string
-  scenario: PaymentOrderScenario
   amount: string
   // 商户传入的基准金额；exact 单 == amount，auto 单为微调前金额（对账用）。
   requestedAmount: string

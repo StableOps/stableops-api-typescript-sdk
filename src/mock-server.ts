@@ -19,7 +19,6 @@ export type MockServerOptions = {
 type PaymentOrder = {
   id: string
   merchant_order_id: string
-  scenario: string
   amount: string
   requested_amount: string
   settlement_asset: string
@@ -155,7 +154,6 @@ export class MockServer {
     const order: PaymentOrder = {
       id,
       merchant_order_id: String(input.merchant_order_id ?? ''),
-      scenario: String(input.scenario ?? 'generic'),
       amount: String(input.amount ?? '0'),
       requested_amount: String(input.amount ?? '0'),
       settlement_asset: String(input.settlement_asset ?? 'USDC'),

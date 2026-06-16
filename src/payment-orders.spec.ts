@@ -22,7 +22,6 @@ describe('PaymentOrdersApi', () => {
         HttpResponse.json({
           id: 'po_1',
           merchant_order_id: 'merchant_1',
-          scenario: 'generic',
           amount: '12.00',
           settlement_asset: 'USDC',
           status: 'created',
