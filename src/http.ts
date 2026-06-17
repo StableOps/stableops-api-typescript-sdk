@@ -1,6 +1,8 @@
 // 与服务端约束保持一致：所有写请求允许带 Idempotency-Key。
 // 读请求不需要传，避免在错误的请求上消耗服务端的去重存储。
 
+import { version } from '../package.json'
+
 import {
   computeDelayMs,
   isRetryableError,
@@ -123,6 +125,7 @@ export class HttpClient {
     this.headers = {
       'content-type': 'application/json',
       accept: 'application/json',
+      'user-agent': `StableOpsSDK/${version}`,
     }
     if (options.apiKey) {
       this.headers.authorization = `Bearer ${options.apiKey}`
