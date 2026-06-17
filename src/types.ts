@@ -32,6 +32,7 @@ export type WebhookEventType =
   | 'payment.finalized'
   | 'payment.reverted'
   | 'payment.expired'
+  | 'payment_order.canceled'
   | 'address.pool.low'
   | 'webhook.delivery.failed'
   | 'agent.action.requested'
