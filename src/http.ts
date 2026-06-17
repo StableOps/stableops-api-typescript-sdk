@@ -9,7 +9,6 @@ import {
   type BackoffOptions,
 } from './retry'
 
-export const ORG_HEADER = 'x-stableops-org'
 export const ENV_HEADER = 'x-stableops-env'
 export const IDEMPOTENCY_HEADER = 'idempotency-key'
 
@@ -21,10 +20,43 @@ export type RetryOptions = {
   maxDelayMs?: number // 默认 5000
 }
 
+// debug 输出钩子：true → console.debug；函数 → 自定义 logger（结构化日志、上报等）。
+// 任何形态下都会先经过脱敏（apiKey / authorization / idempotency-key）。
+export type DebugLogger = (event: DebugEvent) => void
+export type DebugOption = boolean | DebugLogger
+
+export type DebugEvent =
+  | { type: 'init'; config: Record<string, unknown> }
+  | {
+      type: 'request'
+      method: string
+      url: string
+      headers: Record<string, string>
+      body: unknown
+      attempt: number
+    }
+  | {
+      type: 'response'
+      method: string
+      url: string
+      status: number
+      durationMs: number
+      headers: Record<string, string>
+      body: unknown
+      attempt: number
+    }
+  | {
+      type: 'error'
+      method: string
+      url: string
+      attempt: number
+      durationMs: number
+      error: { name?: string; message: string }
+    }
+
 export type ClientOptions = {
   apiKey?: string
   baseUrl?: string
-  organizationSlug?: string
   environment?: StableOpsEnvironment
   // 注入自定义 fetch（测试 / Node18- 兼容 / 自托管 proxy）。
   fetch?: typeof fetch
@@ -32,9 +64,14 @@ export type ClientOptions = {
   // 标准 fetch 不暴露 connect/read 阶段，故不区分两者，保证跨运行时可移植。
   timeoutMs?: number
   retry?: RetryOptions
+  // 打开后会输出初始化配置 / 每次请求 / 每次响应到 console.debug（或自定义 logger）。
+  // 敏感字段会自动脱敏（apiKey 仅保留前 4 + 后 4 字符；authorization / idempotency-key 同样规则）。
+  debug?: DebugOption
   // 内部测试钩子：注入确定性 sleep / random，使重试测试秒级完成且不 flaky。
   _sleep?: (ms: number) => Promise<void>
   _random?: () => number
+  // 内部测试钩子：固定时间戳来源，避免快照断言依赖真实时钟。
+  _now?: () => number
 }
 
 export type RequestInit = {
@@ -79,6 +116,8 @@ export class HttpClient {
   private readonly backoff: BackoffOptions
   private readonly sleep: (ms: number) => Promise<void>
   private readonly random: () => number
+  private readonly now: () => number
+  private readonly debug: DebugLogger | null
 
   constructor(options: ClientOptions) {
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/u, '')
@@ -88,7 +127,6 @@ export class HttpClient {
     this.headers = {
       'content-type': 'application/json',
       accept: 'application/json',
-      [ORG_HEADER]: options.organizationSlug ?? 'demo',
       [ENV_HEADER]: options.environment ?? 'sandbox',
     }
     if (options.apiKey) {
@@ -102,6 +140,23 @@ export class HttpClient {
     }
     this.sleep = options._sleep ?? defaultSleep
     this.random = options._random ?? Math.random
+    this.now = options._now ?? (() => Date.now())
+    this.debug = resolveDebugLogger(options.debug)
+    if (this.debug) {
+      this.debug({
+        type: 'init',
+        config: {
+          baseUrl: this.baseUrl,
+          environment: this.headers[ENV_HEADER],
+          apiKey: maskSecret(options.apiKey),
+          timeoutMs: this.timeoutMs,
+          maxRetries: this.maxRetries,
+          baseDelayMs: this.backoff.baseDelayMs,
+          maxDelayMs: this.backoff.maxDelayMs,
+          fetch: options.fetch ? 'custom' : 'global',
+        },
+      })
+    }
   }
 
   async request<T>(init: RequestInit): Promise<T> {
@@ -122,13 +177,26 @@ export class HttpClient {
     const body = init.body === undefined ? undefined : JSON.stringify(init.body)
     const canRetry = init.method === 'GET' || init.retryable === true
 
+    const urlStr = url.toString()
+
     for (let attempt = 0; ; attempt++) {
       // 每次尝试独立的 AbortController + 计时器：超时表现为 AbortError，归入可重试错误。
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), this.timeoutMs)
+      const startedAt = this.now()
       let retryDelayMs: number
+      if (this.debug) {
+        this.debug({
+          type: 'request',
+          method: init.method,
+          url: urlStr,
+          headers: maskHeaders(headers),
+          body: init.body,
+          attempt,
+        })
+      }
       try {
-        const res = await this.fetchImpl(url.toString(), {
+        const res = await this.fetchImpl(urlStr, {
           method: init.method,
           headers,
           body,
@@ -136,6 +204,18 @@ export class HttpClient {
         })
         const text = await res.text()
         const parsed = text.length === 0 ? null : safeJsonParse(text)
+        if (this.debug) {
+          this.debug({
+            type: 'response',
+            method: init.method,
+            url: urlStr,
+            status: res.status,
+            durationMs: this.now() - startedAt,
+            headers: headersToRecord(res.headers),
+            body: parsed,
+            attempt,
+          })
+        }
         if (res.ok) return parsed as T
 
         if (canRetry && isRetryableStatus(res.status) && attempt < this.maxRetries) {
@@ -155,6 +235,19 @@ export class HttpClient {
       } catch (err) {
         // 已是业务错误（4xx / 已耗尽）：原样抛出，不再重试。
         if (err instanceof StableOpsError) throw err
+        if (this.debug) {
+          this.debug({
+            type: 'error',
+            method: init.method,
+            url: urlStr,
+            attempt,
+            durationMs: this.now() - startedAt,
+            error: {
+              name: err instanceof Error ? err.name : undefined,
+              message: err instanceof Error ? err.message : String(err),
+            },
+          })
+        }
         if (canRetry && isRetryableError(err) && attempt < this.maxRetries) {
           // 网络错误 / 超时且仍有额度：纯指数退避（无 Retry-After 可循）。
           retryDelayMs = computeDelayMs(attempt, this.backoff, this.random)
@@ -174,6 +267,51 @@ export class HttpClient {
       // 走到这里说明本次尝试已决定重试（上方未 return / throw）：退避等待后进入下一轮。
       await this.sleep(retryDelayMs)
     }
+  }
+}
+
+// 脱敏：对 apiKey / token / idempotency-key 等明文字段保留首尾各 4 字符，中间用 *** 代替。
+// 长度 ≤ 8 时整段替换，避免泄露完整值。
+export function maskSecret(value: string | undefined | null): string | undefined {
+  if (value == null) return undefined
+  if (value.length <= 8) return '***'
+  return `${value.slice(0, 4)}***${value.slice(-4)}`
+}
+
+const SENSITIVE_HEADERS = new Set(['authorization', IDEMPOTENCY_HEADER, 'cookie', 'set-cookie'])
+
+function maskHeaders(headers: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(headers)) {
+    if (SENSITIVE_HEADERS.has(k.toLowerCase())) {
+      // authorization 通常是 "Bearer xxx"：保留 scheme + 脱敏 token。
+      if (k.toLowerCase() === 'authorization' && v.startsWith('Bearer ')) {
+        out[k] = `Bearer ${maskSecret(v.slice(7)) ?? '***'}`
+      } else {
+        out[k] = maskSecret(v) ?? '***'
+      }
+    } else {
+      out[k] = v
+    }
+  }
+  return out
+}
+
+function headersToRecord(h: Headers): Record<string, string> {
+  const out: Record<string, string> = {}
+  h.forEach((v, k) => {
+    out[k] = v
+  })
+  return out
+}
+
+function resolveDebugLogger(opt: DebugOption | undefined): DebugLogger | null {
+  if (!opt) return null
+  if (typeof opt === 'function') return opt
+  return (event) => {
+    // 默认 logger：走 console.debug，前缀 "[stableops]" 方便过滤。
+    // eslint-disable-next-line no-console
+    console.debug('[stableops]', event)
   }
 }
 

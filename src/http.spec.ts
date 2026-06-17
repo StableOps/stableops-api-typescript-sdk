@@ -2,7 +2,13 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import { HttpClient, StableOpsError, type ClientOptions } from './http'
+import {
+  HttpClient,
+  StableOpsError,
+  maskSecret,
+  type ClientOptions,
+  type DebugEvent,
+} from './http'
 
 const BASE_URL = 'https://api.test.local'
 const PING = `${BASE_URL}/v1/ping`
@@ -207,6 +213,91 @@ describe('HttpClient.request — 超时（AbortController）', () => {
     const data = await client.request({ method: 'GET', path: '/v1/ping' })
     expect(data).toEqual({ ok: true })
     expect(calls).toBe(2)
+  })
+})
+
+describe('HttpClient — debug 钩子', () => {
+  it('maskSecret：短串整段替换，长串保留首尾各 4', () => {
+    expect(maskSecret(undefined)).toBeUndefined()
+    expect(maskSecret('abcd1234')).toBe('***')
+    expect(maskSecret('sk_live_abcdef1234567890')).toBe('sk_l***7890')
+  })
+
+  it('init / request / response 三段事件 + apiKey 与 authorization 均被脱敏', async () => {
+    server.use(http.get(PING, () => HttpResponse.json({ ok: true })))
+    const events: DebugEvent[] = []
+    const client = new HttpClient({
+      baseUrl: BASE_URL,
+      apiKey: 'sk_live_abcdef1234567890',
+      debug: (e) => events.push(e),
+      _sleep: async () => {},
+      _now: () => 1_700_000_000_000,
+    })
+
+    await client.request({ method: 'GET', path: '/v1/ping' })
+
+    expect(events[0]).toEqual({
+      type: 'init',
+      config: expect.objectContaining({
+        baseUrl: BASE_URL,
+        environment: 'sandbox',
+        apiKey: 'sk_l***7890',
+        timeoutMs: 30_000,
+        maxRetries: 2,
+        fetch: 'global',
+      }),
+    })
+
+    const req = events[1]
+    expect(req.type).toBe('request')
+    if (req.type !== 'request') throw new Error('unreachable')
+    expect(req.headers.authorization).toBe('Bearer sk_l***7890')
+    expect(req.url).toBe(`${BASE_URL}/v1/ping`)
+    expect(req.attempt).toBe(0)
+
+    const res = events[2]
+    expect(res.type).toBe('response')
+    if (res.type !== 'response') throw new Error('unreachable')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(res.durationMs).toBe(0)
+  })
+
+  it('error 事件在网络失败时触发，每次重试一条', async () => {
+    server.use(
+      http.get(PING, () => HttpResponse.error(), { once: true }),
+      http.get(PING, () => HttpResponse.json({ ok: true })),
+    )
+    const events: DebugEvent[] = []
+    const client = new HttpClient({
+      baseUrl: BASE_URL,
+      debug: (e) => events.push(e),
+      _sleep: async () => {},
+      _random: () => 0.5,
+    })
+    await client.request({ method: 'GET', path: '/v1/ping' })
+    const errs = events.filter((e) => e.type === 'error')
+    expect(errs).toHaveLength(1)
+    expect(errs[0]).toMatchObject({ type: 'error', attempt: 0 })
+  })
+
+  it('idempotency-key 在 debug 日志里被脱敏', async () => {
+    server.use(http.post(ORDERS, () => HttpResponse.json({ ok: true })))
+    const events: DebugEvent[] = []
+    const client = new HttpClient({
+      baseUrl: BASE_URL,
+      debug: (e) => events.push(e),
+      _sleep: async () => {},
+    })
+    await client.request({
+      method: 'POST',
+      path: '/v1/payment-orders',
+      body: {},
+      idempotencyKey: 'idem-abcdef-123456-XYZ',
+    })
+    const req = events.find((e) => e.type === 'request')
+    if (!req || req.type !== 'request') throw new Error('expected request event')
+    expect(req.headers['idempotency-key']).toBe('idem***-XYZ')
   })
 })
 

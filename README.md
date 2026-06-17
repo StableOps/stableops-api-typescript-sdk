@@ -51,7 +51,6 @@ import { StableOps } from '@stableops/api-sdk'
 
 const stableops = new StableOps({
   apiKey: process.env.STABLEOPS_API_KEY!,
-  organizationSlug: 'demo',
   environment: 'sandbox',
 })
 

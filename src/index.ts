@@ -6,7 +6,15 @@ import {
 } from './webhooks'
 
 export * from './types'
-export { StableOpsError, type ClientOptions, type RetryOptions } from './http'
+export {
+  StableOpsError,
+  maskSecret,
+  type ClientOptions,
+  type RetryOptions,
+  type DebugEvent,
+  type DebugLogger,
+  type DebugOption,
+} from './http'
 
 export class StableOps {
   readonly paymentOrders: PaymentOrdersApi
