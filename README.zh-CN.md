@@ -45,7 +45,6 @@ import { StableOps } from '@stableops/api-sdk'
 
 const stableops = new StableOps({
   apiKey: process.env.STABLEOPS_API_KEY!,
-  environment: 'sandbox',
 })
 
 const order = await stableops.paymentOrders.create(
@@ -68,10 +67,7 @@ console.log(order.paymentInstructions)
 Webhook 验签和 Mock Server 使用独立的 Node.js 子路径入口：
 
 ```ts
-import {
-  SIGNATURE_HEADER,
-  verifySignature,
-} from '@stableops/api-sdk/webhooks'
+import { SIGNATURE_HEADER, verifySignature } from '@stableops/api-sdk/webhooks'
 import { MockServer } from '@stableops/api-sdk/mock'
 ```
 

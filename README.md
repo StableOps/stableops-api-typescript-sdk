@@ -51,7 +51,6 @@ import { StableOps } from '@stableops/api-sdk'
 
 const stableops = new StableOps({
   apiKey: process.env.STABLEOPS_API_KEY!,
-  environment: 'sandbox',
 })
 
 const order = await stableops.paymentOrders.create(
@@ -74,10 +73,7 @@ console.log(order.paymentInstructions)
 Webhook verification and the mock server use explicit Node-only subpath exports:
 
 ```ts
-import {
-  SIGNATURE_HEADER,
-  verifySignature,
-} from '@stableops/api-sdk/webhooks'
+import { SIGNATURE_HEADER, verifySignature } from '@stableops/api-sdk/webhooks'
 import { MockServer } from '@stableops/api-sdk/mock'
 ```
 
