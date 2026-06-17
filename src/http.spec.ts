@@ -240,7 +240,6 @@ describe('HttpClient — debug 钩子', () => {
       type: 'init',
       config: expect.objectContaining({
         baseUrl: BASE_URL,
-        environment: 'sandbox',
         apiKey: 'sk_l***7890',
         timeoutMs: 30_000,
         maxRetries: 2,

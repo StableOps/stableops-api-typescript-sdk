@@ -9,10 +9,7 @@ import {
   type BackoffOptions,
 } from './retry'
 
-export const ENV_HEADER = 'x-stableops-env'
 export const IDEMPOTENCY_HEADER = 'idempotency-key'
-
-export type StableOpsEnvironment = 'sandbox' | 'live'
 
 export type RetryOptions = {
   maxRetries?: number // 默认 2（最多 3 次尝试）
@@ -57,7 +54,6 @@ export type DebugEvent =
 export type ClientOptions = {
   apiKey?: string
   baseUrl?: string
-  environment?: StableOpsEnvironment
   // 注入自定义 fetch（测试 / Node18- 兼容 / 自托管 proxy）。
   fetch?: typeof fetch
   // 单一总超时（毫秒），默认 30000。逐次尝试独立计时（含每次重试）；
@@ -127,7 +123,6 @@ export class HttpClient {
     this.headers = {
       'content-type': 'application/json',
       accept: 'application/json',
-      [ENV_HEADER]: options.environment ?? 'sandbox',
     }
     if (options.apiKey) {
       this.headers.authorization = `Bearer ${options.apiKey}`
@@ -147,7 +142,6 @@ export class HttpClient {
         type: 'init',
         config: {
           baseUrl: this.baseUrl,
-          environment: this.headers[ENV_HEADER],
           apiKey: maskSecret(options.apiKey),
           timeoutMs: this.timeoutMs,
           maxRetries: this.maxRetries,
