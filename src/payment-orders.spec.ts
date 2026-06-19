@@ -136,7 +136,7 @@ describe('CheckoutSessionsApi', () => {
     expect(session).toMatchObject({
       id: 'cs_1',
       clientSecret: 'cs_cs_1_1234567890abcdef1234567890abcdef1234567890abcdef',
-      url: 'https://checkout.test/en/checkout/cs_1?client_secret=cs_cs_1_1234567890abcdef1234567890abcdef1234567890abcdef',
+      url: 'https://checkout.test/c/cs_1?client_secret=cs_cs_1_1234567890abcdef1234567890abcdef1234567890abcdef',
       status: 'open',
       paymentOrder: {
         id: 'po_1',

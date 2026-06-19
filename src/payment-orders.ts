@@ -69,10 +69,9 @@ export class CheckoutSessionsApi {
     private readonly http: HttpClient,
     options: CheckoutSessionsApiOptions = {},
   ) {
-    this.checkoutBaseUrl = (options.checkoutBaseUrl ?? 'https://stableops.dev').replace(
-      /\/+$/u,
-      '',
-    )
+    this.checkoutBaseUrl = (
+      options.checkoutBaseUrl ?? 'https://pay.stableops.dev'
+    ).replace(/\/+$/u, '')
   }
 
   async create(
@@ -273,7 +272,7 @@ function fromCheckoutWire(
     id: wire.id,
     clientSecret: wire.client_secret,
     url: wire.client_secret
-      ? `${checkoutBaseUrl}/en/checkout/${encodeURIComponent(wire.id)}?client_secret=${encodeURIComponent(wire.client_secret)}`
+      ? `${checkoutBaseUrl}/c/${encodeURIComponent(wire.id)}?client_secret=${encodeURIComponent(wire.client_secret)}`
       : undefined,
     status: wire.status as CheckoutSession['status'],
     title: wire.title,
