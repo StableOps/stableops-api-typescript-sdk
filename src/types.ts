@@ -87,6 +87,33 @@ export type PaymentOrderDetail = PaymentOrder & {
   timeline: PaymentOrderTimelineEntry[]
 }
 
+export type CheckoutSessionStatus =
+  | 'open'
+  | 'completed'
+  | 'expired'
+  | 'canceled'
+
+export type CreateCheckoutSessionInput = CreatePaymentOrderInput & {
+  title?: string
+  description?: string
+  successUrl?: string
+  cancelUrl?: string
+}
+
+export type CheckoutSession = {
+  id: string
+  clientSecret?: string
+  url?: string
+  status: CheckoutSessionStatus
+  title: string | null
+  description: string | null
+  successUrl: string | null
+  cancelUrl: string | null
+  expiresAt: string | null
+  createdAt: string
+  paymentOrder: PaymentOrder
+}
+
 export type NormalizedEvent = {
   id: string
   chain: ChainId

@@ -3,7 +3,9 @@ import type {
   AcceptedAssetInput,
   Asset,
   ChainId,
+  CheckoutSession,
   CreatePaymentOrderInput,
+  CreateCheckoutSessionInput,
   NormalizedEvent,
   NormalizedEventDetail,
   PaymentOrder,
@@ -53,6 +55,38 @@ export class PaymentOrdersApi {
       path: `/v1/payment-orders/${encodeURIComponent(id)}/cancel`,
     })
     return fromWire(wire)
+  }
+}
+
+export type CheckoutSessionsApiOptions = {
+  checkoutBaseUrl?: string
+}
+
+export class CheckoutSessionsApi {
+  private readonly checkoutBaseUrl: string
+
+  constructor(
+    private readonly http: HttpClient,
+    options: CheckoutSessionsApiOptions = {},
+  ) {
+    this.checkoutBaseUrl = (options.checkoutBaseUrl ?? 'https://stableops.dev').replace(
+      /\/+$/u,
+      '',
+    )
+  }
+
+  async create(
+    input: CreateCheckoutSessionInput,
+    options: { idempotencyKey: string },
+  ): Promise<CheckoutSession> {
+    const wire = await this.http.request<WireCheckoutSession>({
+      method: 'POST',
+      path: '/v1/checkout-sessions',
+      idempotencyKey: options.idempotencyKey,
+      retryable: true,
+      body: toCreateCheckoutWire(input),
+    })
+    return fromCheckoutWire(wire, this.checkoutBaseUrl)
   }
 }
 
@@ -113,6 +147,19 @@ type WirePaymentOrderDetail = WirePaymentOrder & {
   timeline: { from: string | null; to: string; reason: string | null; at: string }[]
 }
 
+type WireCheckoutSession = {
+  id: string
+  client_secret?: string
+  status: string
+  title: string | null
+  description: string | null
+  success_url: string | null
+  cancel_url: string | null
+  expires_at: string | null
+  created_at: string
+  payment_order: WirePaymentOrder
+}
+
 type WireNormalizedEvent = {
   id: string
   chain: string
@@ -170,6 +217,16 @@ function toCreateWire(input: CreatePaymentOrderInput) {
   }
 }
 
+function toCreateCheckoutWire(input: CreateCheckoutSessionInput) {
+  return {
+    ...toCreateWire(input),
+    title: input.title,
+    description: input.description,
+    success_url: input.successUrl,
+    cancel_url: input.cancelUrl,
+  }
+}
+
 function fromWire(wire: WirePaymentOrder): PaymentOrder {
   return {
     id: wire.id,
@@ -205,6 +262,27 @@ function fromWireDetail(wire: WirePaymentOrderDetail): PaymentOrderDetail {
       reason: entry.reason,
       at: entry.at,
     })),
+  }
+}
+
+function fromCheckoutWire(
+  wire: WireCheckoutSession,
+  checkoutBaseUrl: string,
+): CheckoutSession {
+  return {
+    id: wire.id,
+    clientSecret: wire.client_secret,
+    url: wire.client_secret
+      ? `${checkoutBaseUrl}/en/checkout/${encodeURIComponent(wire.id)}?client_secret=${encodeURIComponent(wire.client_secret)}`
+      : undefined,
+    status: wire.status as CheckoutSession['status'],
+    title: wire.title,
+    description: wire.description,
+    successUrl: wire.success_url,
+    cancelUrl: wire.cancel_url,
+    expiresAt: wire.expires_at,
+    createdAt: wire.created_at,
+    paymentOrder: fromWire(wire.payment_order),
   }
 }
 
