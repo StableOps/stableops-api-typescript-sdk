@@ -51,7 +51,8 @@ export type CreatePaymentOrderInput = {
   // 'auto' 让服务端把金额微调到唯一（SHARED 地址免手动错开金额）；省略即默认 'exact'。
   amountMode?: 'exact' | 'auto'
   acceptedAssets: AcceptedAssetInput[]
-  expiresAt?: string
+  // 必传:ISO 8601 过期时间。上限 SANDBOX 30 分钟 / LIVE 24 小时,超限服务端 400。
+  expiresAt: string
   metadata?: Record<string, unknown>
 }
 

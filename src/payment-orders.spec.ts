@@ -50,6 +50,7 @@ describe('PaymentOrdersApi', () => {
           { chain: 'base', asset: 'USDC' },
           { chain: 'tron', asset: 'USDT' },
         ],
+        expiresAt: '2026-12-31T00:00:00.000Z',
       },
       { idempotencyKey: 'merchant_1' },
     )
@@ -77,6 +78,7 @@ describe('CheckoutSessionsApi', () => {
           success_url: 'https://merchant.test/success',
           cancel_url: 'https://merchant.test/cancel',
           metadata: { plan: 'pro' },
+          expires_at: '2026-12-31T00:00:00.000Z',
         })
 
         return HttpResponse.json(
@@ -128,6 +130,7 @@ describe('CheckoutSessionsApi', () => {
         successUrl: 'https://merchant.test/success',
         cancelUrl: 'https://merchant.test/cancel',
         metadata: { plan: 'pro' },
+        expiresAt: '2026-12-31T00:00:00.000Z',
       },
       { idempotencyKey: 'merchant_1' },
     )
