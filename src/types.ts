@@ -12,6 +12,7 @@ export type ChainId =
   | 'arbitrum-sepolia'
   | 'polygon-amoy'
   | 'optimism-sepolia'
+  | 'bsc-testnet'
   | 'solana-devnet'
   | 'tron-nile'
 
