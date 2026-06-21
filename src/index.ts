@@ -1,13 +1,10 @@
+import { AddressesApi } from './addresses'
 import { HttpClient, type ClientOptions } from './http'
 import {
   CheckoutSessionsApi,
-  EventsApi,
   PaymentOrdersApi,
 } from './payment-orders'
-import {
-  WebhookDeliveriesApi,
-  WebhookEndpointsApi,
-} from './webhooks'
+import { WebhooksApi } from './webhooks'
 
 export * from './types'
 export {
@@ -25,20 +22,18 @@ export type StableOpsOptions = ClientOptions & {
 }
 
 export class StableOps {
+  readonly addresses: AddressesApi
   readonly paymentOrders: PaymentOrdersApi
   readonly checkoutSessions: CheckoutSessionsApi
-  readonly events: EventsApi
-  readonly webhookEndpoints: WebhookEndpointsApi
-  readonly webhookDeliveries: WebhookDeliveriesApi
+  readonly webhooks: WebhooksApi
 
   constructor(options: StableOpsOptions = {}) {
     const http = new HttpClient(options)
+    this.addresses = new AddressesApi(http)
     this.paymentOrders = new PaymentOrdersApi(http)
     this.checkoutSessions = new CheckoutSessionsApi(http, {
       checkoutBaseUrl: options.checkoutBaseUrl,
     })
-    this.events = new EventsApi(http)
-    this.webhookEndpoints = new WebhookEndpointsApi(http)
-    this.webhookDeliveries = new WebhookDeliveriesApi(http)
+    this.webhooks = new WebhooksApi(http)
   }
 }

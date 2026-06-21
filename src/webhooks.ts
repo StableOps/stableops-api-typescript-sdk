@@ -11,10 +11,10 @@ import type {
   WebhookEventType,
 } from './types'
 
-export class WebhookEndpointsApi {
+export class WebhooksApi {
   constructor(private readonly http: HttpClient) {}
 
-  async create(input: CreateWebhookEndpointInput): Promise<WebhookEndpoint> {
+  async createEndpoint(input: CreateWebhookEndpointInput): Promise<WebhookEndpoint> {
     const wire = await this.http.request<WireWebhookEndpoint>({
       method: 'POST',
       path: '/v1/webhook-endpoints',
@@ -28,7 +28,7 @@ export class WebhookEndpointsApi {
     return fromWire(wire)
   }
 
-  async list(): Promise<WebhookEndpoint[]> {
+  async listEndpoints(): Promise<WebhookEndpoint[]> {
     const wire = await this.http.request<{ items: WireWebhookEndpoint[] }>({
       method: 'GET',
       path: '/v1/webhook-endpoints',
@@ -36,7 +36,7 @@ export class WebhookEndpointsApi {
     return wire.items.map(fromWire)
   }
 
-  async update(
+  async updateEndpoint(
     endpointId: string,
     input: UpdateWebhookEndpointInput,
   ): Promise<WebhookEndpoint> {
@@ -67,12 +67,8 @@ export class WebhookEndpointsApi {
       body: { event_id: eventId },
     })
   }
-}
 
-export class WebhookDeliveriesApi {
-  constructor(private readonly http: HttpClient) {}
-
-  async list(
+  async listDeliveries(
     params: {
       status?: WebhookDeliveryStatus
       endpointId?: string
@@ -93,7 +89,7 @@ export class WebhookDeliveriesApi {
     return wire.items.map(fromWireDelivery)
   }
 
-  async replay(deliveryId: string): Promise<ReplayDeliveryResult> {
+  async replayDelivery(deliveryId: string): Promise<ReplayDeliveryResult> {
     return this.http.request<ReplayDeliveryResult>({
       method: 'POST',
       path: `/v1/webhook-deliveries/${encodeURIComponent(deliveryId)}/replay`,

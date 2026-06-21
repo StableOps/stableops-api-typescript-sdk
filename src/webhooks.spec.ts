@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { HttpClient } from './http'
-import { WebhookDeliveriesApi, WebhookEndpointsApi } from './webhooks'
+import { WebhooksApi } from './webhooks'
 
 const BASE_URL = 'https://api.test.local'
 const ENDPOINTS = `${BASE_URL}/v1/webhook-endpoints`
@@ -14,8 +14,8 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
-describe('WebhookEndpointsApi', () => {
-  it('创建时发送 redact_metadata 并映射响应字段', async () => {
+describe('WebhooksApi', () => {
+  it('创建端点时发送 redact_metadata 并映射响应字段', async () => {
     let requestBody: unknown
     server.use(
       http.post(ENDPOINTS, async ({ request }) => {
@@ -36,8 +36,8 @@ describe('WebhookEndpointsApi', () => {
       }),
     )
 
-    const api = new WebhookEndpointsApi(new HttpClient({ baseUrl: BASE_URL }))
-    const endpoint = await api.create({
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
+    const endpoint = await api.createEndpoint({
       url: 'https://example.com/hooks',
       enabledEvents: ['payment.confirmed'],
       redactMetadata: true,
@@ -64,8 +64,8 @@ describe('WebhookEndpointsApi', () => {
       }),
     )
 
-    const api = new WebhookEndpointsApi(new HttpClient({ baseUrl: BASE_URL }))
-    const endpoint = await api.update('we_1', {
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
+    const endpoint = await api.updateEndpoint('we_1', {
       description: 'updated',
       enabledEvents: ['payment.finalized'],
       redactMetadata: false,
@@ -92,15 +92,13 @@ describe('WebhookEndpointsApi', () => {
       }),
     )
 
-    const api = new WebhookEndpointsApi(new HttpClient({ baseUrl: BASE_URL }))
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
     const result = await api.replay('we_1', 'evt_1')
 
     expect(requestBody).toEqual({ event_id: 'evt_1' })
     expect(result).toEqual({ deliveryId: 'del_replay' })
   })
-})
 
-describe('WebhookDeliveriesApi', () => {
   it('映射列表过滤参数和 delivery 响应', async () => {
     let requestUrl = ''
     server.use(
@@ -130,8 +128,8 @@ describe('WebhookDeliveriesApi', () => {
       }),
     )
 
-    const api = new WebhookDeliveriesApi(new HttpClient({ baseUrl: BASE_URL }))
-    const deliveries = await api.list({
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
+    const deliveries = await api.listDeliveries({
       status: 'succeeded',
       endpointId: 'we_1',
       paymentOrderId: 'po_1',
@@ -161,9 +159,9 @@ describe('WebhookDeliveriesApi', () => {
       ),
     )
 
-    const api = new WebhookDeliveriesApi(new HttpClient({ baseUrl: BASE_URL }))
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
 
-    await expect(api.replay('del_1')).resolves.toEqual({ deliveryId: 'del_2' })
+    await expect(api.replayDelivery('del_1')).resolves.toEqual({ deliveryId: 'del_2' })
     await expect(
       api.replayDeadLetters({ endpointId: 'we_1', limit: 20 }),
     ).resolves.toEqual({

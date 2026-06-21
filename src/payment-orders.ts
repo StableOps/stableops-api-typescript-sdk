@@ -6,8 +6,6 @@ import type {
   CheckoutSession,
   CreatePaymentOrderInput,
   CreateCheckoutSessionInput,
-  NormalizedEvent,
-  NormalizedEventDetail,
   PaymentOrder,
   PaymentOrderDetail,
   PaymentOrderStatus,
@@ -89,43 +87,6 @@ export class CheckoutSessionsApi {
   }
 }
 
-export class EventsApi {
-  constructor(private readonly http: HttpClient) {}
-
-  async list(
-    params: {
-      chain?: ChainId
-      asset?: Asset
-      paymentOrderId?: string
-      limit?: number
-      toAddress?: string
-      txHash?: string
-    } = {},
-  ): Promise<NormalizedEvent[]> {
-    const wire = await this.http.request<{ items: WireNormalizedEvent[] }>({
-      method: 'GET',
-      path: '/v1/events',
-      query: {
-        chain: params.chain,
-        asset: params.asset,
-        payment_order_id: params.paymentOrderId,
-        limit: params.limit,
-        to_address: params.toAddress,
-        tx_hash: params.txHash,
-      },
-    })
-    return wire.items.map(fromWireEvent)
-  }
-
-  async retrieve(id: string): Promise<NormalizedEventDetail> {
-    const wire = await this.http.request<WireNormalizedEventDetail>({
-      method: 'GET',
-      path: `/v1/events/${encodeURIComponent(id)}`,
-    })
-    return fromWireEventDetail(wire)
-  }
-}
-
 // ---- 内部 wire 类型，避免 SDK 公开蛇形命名 ----
 
 type WirePaymentOrder = {
@@ -157,49 +118,6 @@ type WireCheckoutSession = {
   expires_at: string | null
   created_at: string
   payment_order: WirePaymentOrder
-}
-
-type WireNormalizedEvent = {
-  id: string
-  chain: string
-  asset: string
-  from_address: string
-  to_address: string
-  amount: string
-  tx_hash: string
-  log_index: number
-  block_number: string
-  payment_order_id: string | null
-  confirmations: number
-  detected_at: string
-}
-
-type WireNormalizedEventDetail = WireNormalizedEvent & {
-  raw_chain_event: {
-    id: string
-    source: string
-    block_hash: string | null
-    received_at: string
-    payload: unknown
-  }
-  payment_order: {
-    id: string
-    merchant_order_id: string
-    status: string
-    settlement_asset?: string
-    amount: string
-  } | null
-  deliveries: {
-    id: string
-    webhook_endpoint_id: string
-    event_type: string
-    status: string
-    attempts: number
-    response_status: number | null
-    error_message: string | null
-    last_attempt_at: string | null
-    created_at: string
-  }[]
 }
 
 function toCreateWire(input: CreatePaymentOrderInput) {
@@ -285,52 +203,4 @@ function fromCheckoutWire(
   }
 }
 
-function fromWireEvent(wire: WireNormalizedEvent): NormalizedEvent {
-  return {
-    id: wire.id,
-    chain: wire.chain as NormalizedEvent['chain'],
-    asset: wire.asset as NormalizedEvent['asset'],
-    fromAddress: wire.from_address,
-    toAddress: wire.to_address,
-    amount: wire.amount,
-    txHash: wire.tx_hash,
-    logIndex: wire.log_index,
-    blockNumber: wire.block_number,
-    paymentOrderId: wire.payment_order_id,
-    confirmations: wire.confirmations,
-    detectedAt: wire.detected_at,
-  }
-}
 
-function fromWireEventDetail(wire: WireNormalizedEventDetail): NormalizedEventDetail {
-  return {
-    ...fromWireEvent(wire),
-    rawChainEvent: {
-      id: wire.raw_chain_event.id,
-      source: wire.raw_chain_event.source,
-      blockHash: wire.raw_chain_event.block_hash,
-      receivedAt: wire.raw_chain_event.received_at,
-      payload: wire.raw_chain_event.payload,
-    },
-    paymentOrder: wire.payment_order
-      ? {
-          id: wire.payment_order.id,
-          merchantOrderId: wire.payment_order.merchant_order_id,
-          status: wire.payment_order.status as PaymentOrderStatus,
-          settlementAsset: wire.payment_order.settlement_asset as Asset | undefined,
-          amount: wire.payment_order.amount,
-        }
-      : null,
-    deliveries: wire.deliveries.map((delivery) => ({
-      id: delivery.id,
-      webhookEndpointId: delivery.webhook_endpoint_id,
-      eventType: delivery.event_type as NormalizedEventDetail['deliveries'][number]['eventType'],
-      status: delivery.status as NormalizedEventDetail['deliveries'][number]['status'],
-      attempts: delivery.attempts,
-      responseStatus: delivery.response_status,
-      errorMessage: delivery.error_message,
-      lastAttemptAt: delivery.last_attempt_at,
-      createdAt: delivery.created_at,
-    })),
-  }
-}

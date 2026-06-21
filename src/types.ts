@@ -119,55 +119,6 @@ export type CheckoutSession = {
   paymentOrder: PaymentOrder
 }
 
-export type NormalizedEvent = {
-  id: string
-  chain: ChainId
-  asset: Asset
-  fromAddress: string
-  toAddress: string
-  amount: string
-  txHash: string
-  logIndex: number
-  blockNumber: string
-  paymentOrderId: string | null
-  confirmations: number
-  detectedAt: string
-}
-
-export type RawChainEvent = {
-  id: string
-  source: string
-  blockHash: string | null
-  receivedAt: string
-  payload: unknown
-}
-
-export type EventPaymentOrderSummary = {
-  id: string
-  merchantOrderId: string
-  status: PaymentOrderStatus
-  settlementAsset?: Asset
-  amount: string
-}
-
-export type EventWebhookDelivery = {
-  id: string
-  webhookEndpointId: string
-  eventType: WebhookEventType
-  status: WebhookDeliveryStatus
-  attempts: number
-  responseStatus: number | null
-  errorMessage: string | null
-  lastAttemptAt: string | null
-  createdAt: string
-}
-
-export type NormalizedEventDetail = NormalizedEvent & {
-  rawChainEvent: RawChainEvent
-  paymentOrder: EventPaymentOrderSummary | null
-  deliveries: EventWebhookDelivery[]
-}
-
 export type WebhookEndpoint = {
   id: string
   url: string

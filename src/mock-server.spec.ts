@@ -20,7 +20,7 @@ describe('MockServer webhook contract', () => {
     const { url } = await mock.listen()
     const client = new StableOps({ baseUrl: url })
 
-    const created = await client.webhookEndpoints.create({
+    const created = await client.webhooks.createEndpoint({
       url: 'https://example.com/hooks',
       redactMetadata: true,
     })
@@ -30,10 +30,10 @@ describe('MockServer webhook contract', () => {
       secret: 'whsec_mock_secret_1',
     })
 
-    const listed = await client.webhookEndpoints.list()
+    const listed = await client.webhooks.listEndpoints()
     expect(listed[0]).not.toHaveProperty('secret')
 
-    const updated = await client.webhookEndpoints.update('we_1', {
+    const updated = await client.webhooks.updateEndpoint('we_1', {
       description: 'updated',
       redactMetadata: false,
     })
@@ -43,10 +43,10 @@ describe('MockServer webhook contract', () => {
     })
     expect(updated).not.toHaveProperty('secret')
 
-    const rotated = await client.webhookEndpoints.rotateSecret('we_1')
+    const rotated = await client.webhooks.rotateSecret('we_1')
     expect(rotated.secret).toBe('whsec_mock_secret_2')
 
-    const listedAfterRotation = await client.webhookEndpoints.list()
+    const listedAfterRotation = await client.webhooks.listEndpoints()
     expect(listedAfterRotation[0]).not.toHaveProperty('secret')
   })
 })

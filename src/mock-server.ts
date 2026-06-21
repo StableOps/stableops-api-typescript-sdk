@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { buildSignatureHeader } from './signature'
 
 // 极简内存版 mock，用于 SDK 集成测试与本地 docs 示例。
-// 仅模拟 v1/payment-orders 创建/查询/取消、v1/events 列表、v1/webhook-endpoints CRUD，
+// 仅模拟 v1/payment-orders 创建/查询/取消、v1/webhook-endpoints CRUD，
 // 以及签名 fixture 构造。生产环境的 NestJS 服务才是参考实现，这里只做开发体感。
 
 export type MockServerOptions = {
@@ -111,10 +111,6 @@ export class MockServer {
       if (req.method === 'POST' && cancelMatch) {
         return this.cancelOrder(cancelMatch[1], res)
       }
-      if (req.method === 'GET' && url.pathname === '/v1/events') {
-        return json(res, 200, { items: [] })
-      }
-
       if (req.method === 'POST' && url.pathname === '/v1/webhook-endpoints') {
         return this.createEndpoint(body, res)
       }
