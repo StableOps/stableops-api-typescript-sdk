@@ -67,9 +67,10 @@ export class CheckoutSessionsApi {
     private readonly http: HttpClient,
     options: CheckoutSessionsApiOptions = {},
   ) {
-    this.checkoutBaseUrl = (
-      options.checkoutBaseUrl ?? 'https://pay.stableops.dev'
-    ).replace(/\/+$/u, '')
+    this.checkoutBaseUrl = (options.checkoutBaseUrl ?? 'https://pay.stableops.dev').replace(
+      /\/+$/u,
+      '',
+    )
   }
 
   async create(
@@ -182,10 +183,7 @@ function fromWireDetail(wire: WirePaymentOrderDetail): PaymentOrderDetail {
   }
 }
 
-function fromCheckoutWire(
-  wire: WireCheckoutSession,
-  checkoutBaseUrl: string,
-): CheckoutSession {
+function fromCheckoutWire(wire: WireCheckoutSession, checkoutBaseUrl: string): CheckoutSession {
   return {
     id: wire.id,
     clientSecret: wire.client_secret,
@@ -202,5 +200,3 @@ function fromCheckoutWire(
     paymentOrder: fromWire(wire.payment_order),
   }
 }
-
-

@@ -12,11 +12,7 @@ export {
   DELIVERY_ID_HEADER,
   DEFAULT_TOLERANCE_SECONDS,
 } from './signature'
-export type {
-  SignatureBuildInput,
-  MultiSignatureBuildInput,
-  VerifyResult,
-} from './signature'
+export type { SignatureBuildInput, MultiSignatureBuildInput, VerifyResult } from './signature'
 
 export type WebhookVerifyInput = Omit<VerifyInput, 'secrets'> &
   (

@@ -22,14 +22,7 @@ type PaymentOrder = {
   amount: string
   requested_amount: string
   settlement_asset: string
-  status:
-    | 'created'
-    | 'detected'
-    | 'confirmed'
-    | 'finalized'
-    | 'reverted'
-    | 'expired'
-    | 'canceled'
+  status: 'created' | 'detected' | 'confirmed' | 'finalized' | 'reverted' | 'expired' | 'canceled'
   expires_at: string | null
   metadata: unknown
   created_at: string
@@ -125,9 +118,7 @@ export class MockServer {
       if (req.method === 'PATCH' && endpointMatch) {
         return this.updateEndpoint(endpointMatch[1], body, res)
       }
-      const rotateMatch = url.pathname.match(
-        /^\/v1\/webhook-endpoints\/([^/]+)\/rotate-secret$/u,
-      )
+      const rotateMatch = url.pathname.match(/^\/v1\/webhook-endpoints\/([^/]+)\/rotate-secret$/u)
       if (req.method === 'POST' && rotateMatch) {
         return this.rotateEndpointSecret(rotateMatch[1], res)
       }

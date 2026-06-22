@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  buildSignatureHeader,
-  verifySignature,
-  WebhooksApi,
-} from './webhooks-entry'
+import { buildSignatureHeader, verifySignature, WebhooksApi } from './webhooks-entry'
 
 describe('webhooks entry', () => {
   it('支持 secret 和 secrets 两种验签输入', () => {

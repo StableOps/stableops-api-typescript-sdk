@@ -162,9 +162,7 @@ describe('WebhooksApi', () => {
     const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
 
     await expect(api.replayDelivery('del_1')).resolves.toEqual({ deliveryId: 'del_2' })
-    await expect(
-      api.replayDeadLetters({ endpointId: 'we_1', limit: 20 }),
-    ).resolves.toEqual({
+    await expect(api.replayDeadLetters({ endpointId: 'we_1', limit: 20 })).resolves.toEqual({
       replayed: 1,
       items: [{ originalId: 'del_1', deliveryId: 'del_3' }],
     })

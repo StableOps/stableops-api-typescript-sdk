@@ -2,13 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import {
-  HttpClient,
-  StableOpsError,
-  maskSecret,
-  type ClientOptions,
-  type DebugEvent,
-} from './http'
+import { HttpClient, StableOpsError, maskSecret, type ClientOptions, type DebugEvent } from './http'
 
 const BASE_URL = 'https://api.test.local'
 const PING = `${BASE_URL}/v1/ping`
@@ -123,7 +117,11 @@ describe('HttpClient.request — 5xx / 429 重试', () => {
     server.use(
       http.get(
         PING,
-        () => HttpResponse.json({ code: 'rate_limited' }, { status: 429, headers: { 'retry-after': '0' } }),
+        () =>
+          HttpResponse.json(
+            { code: 'rate_limited' },
+            { status: 429, headers: { 'retry-after': '0' } },
+          ),
         { once: true },
       ),
       http.get(PING, () => HttpResponse.json({ ok: true })),

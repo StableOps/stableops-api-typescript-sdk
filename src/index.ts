@@ -1,9 +1,6 @@
 import { AddressesApi } from './addresses'
 import { HttpClient, type ClientOptions } from './http'
-import {
-  CheckoutSessionsApi,
-  PaymentOrdersApi,
-} from './payment-orders'
+import { CheckoutSessionsApi, PaymentOrdersApi } from './payment-orders'
 import { WebhooksApi } from './webhooks'
 
 export * from './types'

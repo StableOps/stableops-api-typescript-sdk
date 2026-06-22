@@ -43,11 +43,7 @@ export type WebhookEventType =
   | 'agent.action.approved'
   | 'agent.action.executed'
 
-export type WebhookDeliveryStatus =
-  | 'pending'
-  | 'succeeded'
-  | 'failed'
-  | 'dead_letter'
+export type WebhookDeliveryStatus = 'pending' | 'succeeded' | 'failed' | 'dead_letter'
 
 export type CreatePaymentOrderInput = {
   merchantOrderId: string
@@ -92,11 +88,7 @@ export type PaymentOrderDetail = PaymentOrder & {
   timeline: PaymentOrderTimelineEntry[]
 }
 
-export type CheckoutSessionStatus =
-  | 'open'
-  | 'completed'
-  | 'expired'
-  | 'canceled'
+export type CheckoutSessionStatus = 'open' | 'completed' | 'expired' | 'canceled'
 
 export type CreateCheckoutSessionInput = CreatePaymentOrderInput & {
   title?: string

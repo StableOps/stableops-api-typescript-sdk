@@ -96,9 +96,7 @@ export class WebhooksApi {
     })
   }
 
-  async replayDeadLetters(
-    input: ReplayDeadLettersInput = {},
-  ): Promise<ReplayDeadLettersResult> {
+  async replayDeadLetters(input: ReplayDeadLettersInput = {}): Promise<ReplayDeadLettersResult> {
     const wire = await this.http.request<WireReplayDeadLettersResult>({
       method: 'POST',
       path: '/v1/webhook-deliveries/replay-dead-letters',

@@ -115,10 +115,9 @@ describe('CheckoutSessionsApi', () => {
       }),
     )
 
-    const api = new CheckoutSessionsApi(
-      new HttpClient({ baseUrl: BASE_URL }),
-      { checkoutBaseUrl: 'https://checkout.test' },
-    )
+    const api = new CheckoutSessionsApi(new HttpClient({ baseUrl: BASE_URL }), {
+      checkoutBaseUrl: 'https://checkout.test',
+    })
     const session = await api.create(
       {
         merchantOrderId: 'merchant_1',

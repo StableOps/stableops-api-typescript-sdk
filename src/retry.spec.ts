@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  computeDelayMs,
-  isRetryableError,
-  isRetryableStatus,
-  parseRetryAfterMs,
-} from './retry'
+import { computeDelayMs, isRetryableError, isRetryableStatus, parseRetryAfterMs } from './retry'
 
 describe('isRetryableStatus', () => {
   it('429 与 5xx 可重试', () => {

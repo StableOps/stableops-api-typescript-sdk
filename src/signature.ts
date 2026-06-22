@@ -33,18 +33,10 @@ export type VerifyResult =
   | { ok: true; timestamp: number }
   | {
       ok: false
-      reason:
-        | 'missing_header'
-        | 'invalid_format'
-        | 'timestamp_expired'
-        | 'bad_signature'
+      reason: 'missing_header' | 'invalid_format' | 'timestamp_expired' | 'bad_signature'
     }
 
-export function buildSignatureHeader({
-  secret,
-  timestamp,
-  rawBody,
-}: SignatureBuildInput): string {
+export function buildSignatureHeader({ secret, timestamp, rawBody }: SignatureBuildInput): string {
   return buildSignatureHeaderForSecrets({
     secrets: [secret],
     timestamp,
@@ -88,9 +80,7 @@ export function verifySignature(input: VerifyInput): VerifyResult {
   return { ok: false, reason: 'bad_signature' }
 }
 
-function parseHeader(
-  header: string,
-): { timestamp: number; signatures: string[] } | null {
+function parseHeader(header: string): { timestamp: number; signatures: string[] } | null {
   let timestamp: number | null = null
   const signatures: string[] = []
   for (const segment of header.split(',')) {

@@ -13,6 +13,7 @@
 ### Task 1: Safe Retry Semantics
 
 **Files:**
+
 - Modify: `src/http.ts`
 - Modify: `src/payment-orders.ts`
 - Test: `src/http.spec.ts`
@@ -24,6 +25,7 @@
 ### Task 2: API Contract Alignment
 
 **Files:**
+
 - Modify: `src/types.ts`
 - Modify: `src/payment-orders.ts`
 - Modify: `src/webhooks.ts`
@@ -37,6 +39,7 @@
 ### Task 3: Runtime-Specific Package Exports
 
 **Files:**
+
 - Modify: `src/index.ts`
 - Create: `src/webhooks-entry.ts`
 - Create: `src/mock-entry.ts`
@@ -51,6 +54,7 @@
 ### Task 4: Mock Contract Fidelity
 
 **Files:**
+
 - Modify: `src/mock-server.ts`
 - Create: `src/mock-server.spec.ts`
 
@@ -61,6 +65,7 @@
 ### Task 5: Documentation and Full Verification
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `README.zh-CN.md`
 

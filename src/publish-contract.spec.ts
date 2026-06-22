@@ -29,7 +29,10 @@ describe('publish contract', () => {
       ...pkg.devDependencies,
     })
     expect(dependencyEntries).not.toContainEqual(
-      expect.arrayContaining([expect.stringMatching(/^@stableops\//u), expect.stringMatching(/^workspace:/u)]),
+      expect.arrayContaining([
+        expect.stringMatching(/^@stableops\//u),
+        expect.stringMatching(/^workspace:/u),
+      ]),
     )
   })
 
