@@ -307,7 +307,6 @@ function resolveDebugLogger(opt: DebugOption | undefined): DebugLogger | null {
   if (typeof opt === 'function') return opt
   return (event) => {
     // 默认 logger：走 console.debug，前缀 "[stableops]" 方便过滤。
-    // eslint-disable-next-line no-console
     console.debug('[stableops]', event)
   }
 }

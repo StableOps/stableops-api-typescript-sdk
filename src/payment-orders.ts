@@ -1,8 +1,6 @@
 import type { HttpClient } from './http'
 import type {
   AcceptedAssetInput,
-  Asset,
-  ChainId,
   CheckoutSession,
   CreatePaymentOrderInput,
   CreateCheckoutSessionInput,
