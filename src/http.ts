@@ -125,7 +125,12 @@ export class HttpClient {
     this.headers = {
       'content-type': 'application/json',
       accept: 'application/json',
-      'user-agent': `StableOpsSDK/${version}`,
+    }
+    // user-agent 是 fetch 规范定义的 forbidden header：浏览器里 Chrome 静默丢弃、
+    // Safari 严格地把它放进 CORS 预检的 Access-Control-Request-Headers 直接 fail。
+    // 浏览器会自动带自己的 UA，无需 SDK 设置；只有 Node/Bun/Deno 这类无 document 的运行时需要。
+    if (typeof document === 'undefined') {
+      this.headers['user-agent'] = `StableOpsSDK/${version}`
     }
     if (options.apiKey) {
       this.headers.authorization = `Bearer ${options.apiKey}`

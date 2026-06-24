@@ -377,3 +377,46 @@ describe('HttpClient.request — 幂等键', () => {
     expect(key).toBe('caller-supplied-key')
   })
 })
+
+describe('HttpClient — user-agent 仅在非浏览器环境发送', () => {
+  // Safari 严格执行 fetch 规范：把 user-agent 列为 forbidden header，并把 SDK 设置的值放进
+  // CORS 预检的 Access-Control-Request-Headers，后端没声明就 403。浏览器自己会带 UA，无需 SDK 设。
+  it('Node 环境(默认)发送 StableOpsSDK user-agent', async () => {
+    let ua: string | null = null
+    server.use(
+      http.get(PING, ({ request }) => {
+        ua = request.headers.get('user-agent')
+        return HttpResponse.json({ ok: true })
+      }),
+    )
+    await makeClient().request({ method: 'GET', path: '/v1/ping' })
+    expect(ua).toMatch(/^StableOpsSDK\//u)
+  })
+
+  it('存在 document(浏览器) 时不写入 user-agent header', async () => {
+    let uaSetBySdk: string | undefined
+    // 用 fake fetch 直接观察 SDK 实际下发的 headers —— msw 在 Node 里对 forbidden header
+    // 的处理不能精确模拟浏览器，所以这里直接拦截 fetch 看 init.headers。
+    const fakeFetch: typeof fetch = async (_input, init) => {
+      const h = init?.headers as Record<string, string> | undefined
+      uaSetBySdk = h?.['user-agent']
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    // 在 Vitest 的 node 环境里 stub 一个最小 document，让 typeof document !== 'undefined' 成立。
+    const g = globalThis as { document?: unknown }
+    const hadDocument = 'document' in g
+    const prev = g.document
+    g.document = {}
+    try {
+      const client = makeClient({ fetch: fakeFetch })
+      await client.request({ method: 'GET', path: '/v1/ping' })
+      expect(uaSetBySdk).toBeUndefined()
+    } finally {
+      if (hadDocument) g.document = prev
+      else delete g.document
+    }
+  })
+})
