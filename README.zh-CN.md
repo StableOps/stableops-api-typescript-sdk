@@ -1,6 +1,6 @@
 # StableOps API SDK
 
-StableOps 官方 TypeScript SDK。
+[![npm version](https://img.shields.io/npm/v/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![npm downloads](https://img.shields.io/npm/dm/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![License](https://img.shields.io/npm/l/@stableops/api-sdk)](./LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org) [![Node](https://img.shields.io/badge/Node-%3E%3D18-339933)](https://nodejs.org)
 
 [View English README](./README.md)
 
@@ -92,10 +92,6 @@ import { MockServer } from '@stableops/api-sdk/mock'
 - 资产：USDC 和 USDT。
 
 实际可用的 chain/asset 组合可能受环境和组织配置影响。生产环境请以 Dashboard 或 API 配置为准。
-最新支持范围和环境配置请参考官方文档：
-
-- https://stableops.dev/zh/docs
-- https://stableops.dev/en/docs
 
 ## License
 

@@ -1,6 +1,6 @@
 # StableOps API SDK
 
-Official TypeScript SDK for the StableOps API.
+[![npm version](https://img.shields.io/npm/v/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![npm downloads](https://img.shields.io/npm/dm/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![License](https://img.shields.io/npm/l/@stableops/api-sdk)](./LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org) [![Node](https://img.shields.io/badge/Node-%3E%3D18-339933)](https://nodejs.org)
 
 [中文文档](./README.zh-CN.md)
 
@@ -101,11 +101,7 @@ This SDK supports:
 
 StableOps may support a subset of chain/asset pairs per environment and
 organization configuration. Use the dashboard or API configuration for the
-source of truth in production. See the official docs for the latest supported
-chains, assets, and environment-specific setup:
-
-- https://stableops.dev/en/docs
-- https://stableops.dev/zh/docs
+source of truth in production.
 
 ## License
 
