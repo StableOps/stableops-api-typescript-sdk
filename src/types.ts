@@ -95,6 +95,7 @@ export type CreateCheckoutSessionInput = CreatePaymentOrderInput & {
   description?: string
   successUrl?: string
   cancelUrl?: string
+  walletConnectProjectId?: string
 }
 
 export type CheckoutSession = {
@@ -106,6 +107,7 @@ export type CheckoutSession = {
   description: string | null
   successUrl: string | null
   cancelUrl: string | null
+  walletConnectProjectId: string | null
   expiresAt: string | null
   createdAt: string
   paymentOrder: PaymentOrder

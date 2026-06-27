@@ -114,6 +114,7 @@ type WireCheckoutSession = {
   description: string | null
   success_url: string | null
   cancel_url: string | null
+  walletconnect_project_id: string | null
   expires_at: string | null
   created_at: string
   payment_order: WirePaymentOrder
@@ -140,6 +141,7 @@ function toCreateCheckoutWire(input: CreateCheckoutSessionInput) {
     description: input.description,
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
+    walletconnect_project_id: input.walletConnectProjectId,
   }
 }
 
@@ -193,6 +195,7 @@ function fromCheckoutWire(wire: WireCheckoutSession, checkoutBaseUrl: string): C
     description: wire.description,
     successUrl: wire.success_url,
     cancelUrl: wire.cancel_url,
+    walletConnectProjectId: wire.walletconnect_project_id,
     expiresAt: wire.expires_at,
     createdAt: wire.created_at,
     paymentOrder: fromWire(wire.payment_order),

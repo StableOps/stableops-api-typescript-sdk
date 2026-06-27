@@ -76,6 +76,7 @@ describe('CheckoutSessionsApi', () => {
           title: 'Acme Pro',
           success_url: 'https://merchant.test/success',
           cancel_url: 'https://merchant.test/cancel',
+          walletconnect_project_id: 'wc_project_123',
           metadata: { plan: 'pro' },
           expires_at: '2026-12-31T00:00:00.000Z',
         })
@@ -89,6 +90,7 @@ describe('CheckoutSessionsApi', () => {
             description: null,
             success_url: 'https://merchant.test/success',
             cancel_url: 'https://merchant.test/cancel',
+            walletconnect_project_id: 'wc_project_123',
             expires_at: '2026-06-19T00:00:00.000Z',
             created_at: '2026-06-18T00:00:00.000Z',
             payment_order: {
@@ -127,6 +129,7 @@ describe('CheckoutSessionsApi', () => {
         title: 'Acme Pro',
         successUrl: 'https://merchant.test/success',
         cancelUrl: 'https://merchant.test/cancel',
+        walletConnectProjectId: 'wc_project_123',
         metadata: { plan: 'pro' },
         expiresAt: '2026-12-31T00:00:00.000Z',
       },
@@ -139,6 +142,7 @@ describe('CheckoutSessionsApi', () => {
       clientSecret: 'cs_cs_1_1234567890abcdef1234567890abcdef1234567890abcdef',
       url: 'https://checkout.test/c/cs_1?client_secret=cs_cs_1_1234567890abcdef1234567890abcdef1234567890abcdef',
       status: 'open',
+      walletConnectProjectId: 'wc_project_123',
       paymentOrder: {
         id: 'po_1',
         merchantOrderId: 'merchant_1',
