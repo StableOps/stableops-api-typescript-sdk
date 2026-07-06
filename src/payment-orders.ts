@@ -86,9 +86,9 @@ export class CheckoutSessionsApi {
   }
 }
 
-// ---- 内部 wire 类型，避免 SDK 公开蛇形命名 ----
+// ---- wire 类型与映射，供 checkout / subscription 资源复用 ----
 
-type WirePaymentOrder = {
+export type WirePaymentOrder = {
   id: string
   merchant_order_id: string
   amount: string
@@ -145,7 +145,17 @@ function toCreateCheckoutWire(input: CreateCheckoutSessionInput) {
   }
 }
 
-function fromWire(wire: WirePaymentOrder): PaymentOrder {
+export function buildCheckoutUrl(
+  checkoutBaseUrl: string,
+  id: string,
+  clientSecret?: string,
+): string | undefined {
+  return clientSecret
+    ? `${checkoutBaseUrl}/c/${encodeURIComponent(id)}?client_secret=${encodeURIComponent(clientSecret)}`
+    : undefined
+}
+
+export function fromWire(wire: WirePaymentOrder): PaymentOrder {
   return {
     id: wire.id,
     merchantOrderId: wire.merchant_order_id,
@@ -187,9 +197,7 @@ function fromCheckoutWire(wire: WireCheckoutSession, checkoutBaseUrl: string): C
   return {
     id: wire.id,
     clientSecret: wire.client_secret,
-    url: wire.client_secret
-      ? `${checkoutBaseUrl}/c/${encodeURIComponent(wire.id)}?client_secret=${encodeURIComponent(wire.client_secret)}`
-      : undefined,
+    url: buildCheckoutUrl(checkoutBaseUrl, wire.id, wire.client_secret),
     status: wire.status as CheckoutSession['status'],
     title: wire.title,
     description: wire.description,

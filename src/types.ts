@@ -170,3 +170,156 @@ export type ReplayDeadLettersResult = {
   replayed: number
   items: { originalId: string; deliveryId: string }[]
 }
+
+export type MerchantPlanInterval = 'month' | 'year' | 'week' | 'custom_days'
+
+export type EndUserSubscriptionStatus =
+  | 'incomplete'
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'canceled'
+  | 'expired'
+
+export type EndUserInvoiceStatus = 'open' | 'paid' | 'void' | 'uncollectible'
+
+export type EndUserInvoiceKind = 'first' | 'renewal' | 'upgrade_proration'
+
+export type MerchantPlan = {
+  id: string
+  code: string
+  name: string
+  description: string | null
+  groupKey: string
+  amount: string
+  asset: Asset
+  interval: MerchantPlanInterval
+  intervalCount: number
+  trialDays: number | null
+  metadata: Record<string, unknown> | null
+  isActive: boolean
+  isTemplate: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type CreateMerchantPlanInput = {
+  code: string
+  name: string
+  description?: string | null
+  groupKey: string
+  amount: string
+  asset: Asset
+  interval: MerchantPlanInterval
+  intervalCount: number
+  trialDays?: number | null
+  metadata?: Record<string, unknown> | null
+  isTemplate?: boolean
+}
+
+export type UpdateMerchantPlanInput = Partial<CreateMerchantPlanInput>
+
+export type EndUserSubscription = {
+  id: string
+  merchantUserId: string
+  planId: string
+  status: EndUserSubscriptionStatus
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  cancelAtPeriodEnd: boolean
+  pendingPlanId: string | null
+  pendingPlanChangeAt: string | null
+  trialEndsAt: string | null
+  canceledAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type EndUserInvoice = {
+  id: string
+  subscriptionId: string
+  merchantUserId: string
+  kind: EndUserInvoiceKind
+  periodStart: string
+  periodEnd: string
+  amount: string
+  asset: Asset
+  status: EndUserInvoiceStatus
+  paymentOrderId: string | null
+  targetPlanId: string | null
+  dueAt: string
+  paidAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type MerchantSubscriptionCreateResult = {
+  subscription: EndUserSubscription
+  invoice: EndUserInvoice | null
+}
+
+export type MerchantSubscriptionChangePlanResult = MerchantSubscriptionCreateResult & {
+  pending: boolean
+}
+
+export type CreateEndUserSubscriptionInput = {
+  planId: string
+  merchantUserId: string
+  trialDays?: number
+}
+
+export type ChangeEndUserSubscriptionPlanInput = {
+  planId: string
+}
+
+export type CancelEndUserSubscriptionInput = {
+  immediate?: boolean
+}
+
+export type MerchantBillingSettings = {
+  payWindowDays: number
+  renewalLeadDays: number
+  graceDays: number
+  acceptedChains: ChainId[]
+  paymentAmountMode: 'exact' | 'auto'
+}
+
+export type UpdateMerchantBillingSettingsInput = Partial<MerchantBillingSettings>
+
+export type CreatePortalSessionInput = {
+  merchantUserId: string
+  expiresAt?: string
+}
+
+export type PortalSession = {
+  id: string
+  portalToken: string
+  expiresAt: string
+}
+
+export type PayMerchantInvoiceResponse = {
+  invoiceId: string
+  paymentOrderId: string
+  status: EndUserInvoiceStatus
+  paymentOrder: PaymentOrder
+}
+
+export type MerchantInvoicePaymentStatus = {
+  invoiceId: string
+  status: EndUserInvoiceStatus
+  paymentOrder: PaymentOrder | null
+}
+
+export type CreateInvoiceCheckoutSessionInput = {
+  title?: string
+  successUrl?: string
+  cancelUrl?: string
+  walletConnectProjectId?: string
+}
+
+export type MerchantInvoiceCheckoutSession = {
+  checkoutSessionId: string
+  clientSecret: string
+  checkoutUrl: string
+  paymentOrder: PaymentOrder
+}
