@@ -192,7 +192,6 @@ export type MerchantPlan = {
   description: string | null
   groupKey: string
   amount: string
-  asset: Asset
   interval: MerchantPlanInterval
   intervalCount: number
   trialDays: number | null
@@ -209,7 +208,6 @@ export type CreateMerchantPlanInput = {
   description?: string | null
   groupKey: string
   amount: string
-  asset: Asset
   interval: MerchantPlanInterval
   intervalCount: number
   trialDays?: number | null
@@ -243,7 +241,7 @@ export type EndUserInvoice = {
   periodStart: string
   periodEnd: string
   amount: string
-  asset: Asset
+  asset: Asset | null
   status: EndUserInvoiceStatus
   paymentOrderId: string | null
   targetPlanId: string | null

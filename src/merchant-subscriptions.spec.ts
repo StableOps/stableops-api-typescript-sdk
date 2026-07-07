@@ -20,7 +20,6 @@ const planWire = {
   description: null,
   group_key: 'demo',
   amount: '0.01',
-  asset: 'USDC',
   interval: 'month',
   interval_count: 1,
   trial_days: null,
@@ -55,7 +54,7 @@ const invoiceWire = {
   period_start: '2026-07-01T00:00:00.000Z',
   period_end: '2026-08-01T00:00:00.000Z',
   amount: '0.01',
-  asset: 'USDC',
+  asset: null,
   status: 'open',
   payment_order_id: 'po_1',
   target_plan_id: null,
@@ -96,7 +95,6 @@ describe('MerchantSubscriptionsApi', () => {
           name: 'Starter',
           group_key: 'demo',
           amount: '0.01',
-          asset: 'USDC',
           interval: 'month',
           interval_count: 1,
         })
@@ -111,7 +109,6 @@ describe('MerchantSubscriptionsApi', () => {
         name: 'Starter',
         groupKey: 'demo',
         amount: '0.01',
-        asset: 'USDC',
         interval: 'month',
         intervalCount: 1,
       },
@@ -148,6 +145,8 @@ describe('MerchantSubscriptionsApi', () => {
       paymentOrderId: 'po_1',
       dueAt: '2026-07-08T00:00:00.000Z',
     })
+    // 未结算的账单 asset 为 null，付款人支付时才确定币种。
+    expect(invoices[0].asset).toBeNull()
   })
 })
 

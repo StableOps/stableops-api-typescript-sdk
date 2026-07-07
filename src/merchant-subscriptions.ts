@@ -36,7 +36,6 @@ type WireMerchantPlan = {
   description: string | null
   group_key: string
   amount: string
-  asset: MerchantPlan['asset']
   interval: MerchantPlan['interval']
   interval_count: number
   trial_days: number | null
@@ -510,7 +509,6 @@ function fromPlanWire(wire: WireMerchantPlan): MerchantPlan {
     description: wire.description,
     groupKey: wire.group_key,
     amount: wire.amount,
-    asset: wire.asset,
     interval: wire.interval,
     intervalCount: wire.interval_count,
     trialDays: wire.trial_days,
@@ -620,7 +618,6 @@ function toPlanWire(input: CreateMerchantPlanInput | UpdateMerchantPlanInput) {
     description: input.description,
     group_key: input.groupKey,
     amount: input.amount,
-    asset: input.asset,
     interval: input.interval,
     interval_count: input.intervalCount,
     trial_days: input.trialDays,
