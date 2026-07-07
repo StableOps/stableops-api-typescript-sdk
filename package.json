@@ -1,6 +1,6 @@
 {
   "name": "@stableops/api-sdk",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": false,
   "description": "TypeScript SDK for the StableOps API — make payments, manage orders, and verify webhooks.",
   "keywords": [
