@@ -148,6 +148,57 @@ describe('MerchantSubscriptionsApi', () => {
     // 未结算的账单 asset 为 null，付款人支付时才确定币种。
     expect(invoices[0].asset).toBeNull()
   })
+
+  it('updates settings without accepted chains', async () => {
+    server.use(
+      http.put(`${BASE_URL}/v1/merchant/settings`, async ({ request }) => {
+        expect(await request.json()).toEqual({
+          pay_window_days: 3,
+          payment_amount_mode: 'auto',
+        })
+        return HttpResponse.json({
+          pay_window_days: 3,
+          renewal_lead_days: 2,
+          grace_days: 1,
+          payment_amount_mode: 'auto',
+        })
+      }),
+    )
+
+    const api = new MerchantSubscriptionsApi(new HttpClient({ baseUrl: BASE_URL }))
+    const settings = await api.settings.update({
+      payWindowDays: 3,
+      paymentAmountMode: 'auto',
+    })
+
+    expect(settings).toMatchObject({
+      payWindowDays: 3,
+      paymentAmountMode: 'auto',
+    })
+  })
+
+  it('pays invoices with explicit accepted assets', async () => {
+    server.use(
+      http.post(`${BASE_URL}/v1/merchant/invoices/inv_1/pay`, async ({ request }) => {
+        expect(await request.json()).toEqual({
+          accepted_assets: [{ chain: 'bsc-testnet', asset: 'USDT' }],
+        })
+        return HttpResponse.json({
+          invoice_id: 'inv_1',
+          payment_order_id: 'po_1',
+          status: 'open',
+          payment_order: paymentOrderWire,
+        })
+      }),
+    )
+
+    const api = new MerchantSubscriptionsApi(new HttpClient({ baseUrl: BASE_URL }))
+    const payment = await api.invoices.pay('inv_1', {
+      acceptedAssets: [{ chain: 'bsc-testnet', asset: 'USDT' }],
+    })
+
+    expect(payment.paymentOrderId).toBe('po_1')
+  })
 })
 
 describe('MerchantPortalApi', () => {
@@ -159,6 +210,7 @@ describe('MerchantPortalApi', () => {
           success_url: 'https://merchant.test/success',
           cancel_url: 'https://merchant.test/cancel',
           walletconnect_project_id: 'wc_123',
+          accepted_assets: [{ chain: 'base-sepolia', asset: 'USDC' }],
         })
         return HttpResponse.json({
           checkout_session_id: 'cs_1',
@@ -171,11 +223,15 @@ describe('MerchantPortalApi', () => {
     const api = new MerchantPortalApi(new HttpClient({ baseUrl: BASE_URL, apiKey: 'eps_token' }), {
       checkoutBaseUrl: 'https://checkout.test',
     })
-    const session = await api.invoices.checkoutSession('inv_1', {
-      successUrl: 'https://merchant.test/success',
-      cancelUrl: 'https://merchant.test/cancel',
-      walletConnectProjectId: 'wc_123',
-    })
+    const session = await api.invoices.checkoutSession(
+      'inv_1',
+      {
+        successUrl: 'https://merchant.test/success',
+        cancelUrl: 'https://merchant.test/cancel',
+        walletConnectProjectId: 'wc_123',
+        acceptedAssets: [{ chain: 'base-sepolia', asset: 'USDC' }],
+      },
+    )
 
     expect(session).toMatchObject({
       checkoutSessionId: 'cs_1',

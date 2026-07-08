@@ -17,6 +17,7 @@ import type {
   MerchantPlan,
   MerchantSubscriptionChangePlanResult,
   MerchantSubscriptionCreateResult,
+  PayMerchantInvoiceInput,
   PayMerchantInvoiceResponse,
   PortalSession,
   UpdateMerchantBillingSettingsInput,
@@ -84,7 +85,6 @@ type WireMerchantBillingSettings = {
   pay_window_days: number
   renewal_lead_days: number
   grace_days: number
-  accepted_chains: MerchantBillingSettings['acceptedChains']
   payment_amount_mode: MerchantBillingSettings['paymentAmountMode']
 }
 
@@ -311,10 +311,11 @@ class MerchantInvoicesResource {
     return fromInvoiceWire(wire)
   }
 
-  async pay(id: string, options: WriteOptions = {}) {
+  async pay(id: string, input: PayMerchantInvoiceInput, options: WriteOptions = {}) {
     const wire = await this.http.request<WirePayMerchantInvoiceResponse>({
       method: 'POST',
       path: `/v1/merchant/invoices/${encodeURIComponent(id)}/pay`,
+      body: toPayInvoiceWire(input),
       idempotencyKey: options.idempotencyKey,
       retryable: true,
     })
@@ -462,10 +463,11 @@ class MerchantPortalInvoicesResource {
     return fromInvoiceWire(wire)
   }
 
-  async pay(id: string, options: WriteOptions = {}) {
+  async pay(id: string, input: PayMerchantInvoiceInput, options: WriteOptions = {}) {
     const wire = await this.http.request<WirePayMerchantInvoiceResponse>({
       method: 'POST',
       path: `/v1/merchant/portal/invoices/${encodeURIComponent(id)}/pay`,
+      body: toPayInvoiceWire(input),
       idempotencyKey: options.idempotencyKey,
       retryable: true,
     })
@@ -581,7 +583,6 @@ function fromSettingsWire(wire: WireMerchantBillingSettings): MerchantBillingSet
     payWindowDays: wire.pay_window_days,
     renewalLeadDays: wire.renewal_lead_days,
     graceDays: wire.grace_days,
-    acceptedChains: wire.accepted_chains,
     paymentAmountMode: wire.payment_amount_mode,
   }
 }
@@ -639,8 +640,16 @@ function toSettingsWire(input: UpdateMerchantBillingSettingsInput) {
     pay_window_days: input.payWindowDays,
     renewal_lead_days: input.renewalLeadDays,
     grace_days: input.graceDays,
-    accepted_chains: input.acceptedChains,
     payment_amount_mode: input.paymentAmountMode,
+  }
+}
+
+function toPayInvoiceWire(input: PayMerchantInvoiceInput) {
+  return {
+    accepted_assets: input.acceptedAssets.map((entry) => ({
+      chain: entry.chain,
+      asset: entry.asset,
+    })),
   }
 }
 
@@ -650,5 +659,9 @@ function toCheckoutSessionWire(input: CreateInvoiceCheckoutSessionInput) {
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
     walletconnect_project_id: input.walletConnectProjectId,
+    accepted_assets: input.acceptedAssets.map((entry) => ({
+      chain: entry.chain,
+      asset: entry.asset,
+    })),
   }
 }

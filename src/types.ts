@@ -278,7 +278,6 @@ export type MerchantBillingSettings = {
   payWindowDays: number
   renewalLeadDays: number
   graceDays: number
-  acceptedChains: ChainId[]
   paymentAmountMode: 'exact' | 'auto'
 }
 
@@ -302,6 +301,10 @@ export type PayMerchantInvoiceResponse = {
   paymentOrder: PaymentOrder
 }
 
+export type PayMerchantInvoiceInput = {
+  acceptedAssets: AcceptedAssetInput[]
+}
+
 export type MerchantInvoicePaymentStatus = {
   invoiceId: string
   status: EndUserInvoiceStatus
@@ -309,6 +312,7 @@ export type MerchantInvoicePaymentStatus = {
 }
 
 export type CreateInvoiceCheckoutSessionInput = {
+  acceptedAssets: AcceptedAssetInput[]
   title?: string
   successUrl?: string
   cancelUrl?: string
