@@ -149,18 +149,16 @@ describe('MerchantSubscriptionsApi', () => {
     expect(invoices[0].asset).toBeNull()
   })
 
-  it('updates settings without accepted chains', async () => {
+  it('updates settings without accepted chains or amount mode', async () => {
     server.use(
       http.put(`${BASE_URL}/v1/merchant/settings`, async ({ request }) => {
         expect(await request.json()).toEqual({
           pay_window_days: 3,
-          payment_amount_mode: 'auto',
         })
         return HttpResponse.json({
           pay_window_days: 3,
           renewal_lead_days: 2,
           grace_days: 1,
-          payment_amount_mode: 'auto',
         })
       }),
     )
@@ -168,12 +166,12 @@ describe('MerchantSubscriptionsApi', () => {
     const api = new MerchantSubscriptionsApi(new HttpClient({ baseUrl: BASE_URL }))
     const settings = await api.settings.update({
       payWindowDays: 3,
-      paymentAmountMode: 'auto',
     })
 
     expect(settings).toMatchObject({
       payWindowDays: 3,
-      paymentAmountMode: 'auto',
+      renewalLeadDays: 2,
+      graceDays: 1,
     })
   })
 
@@ -181,6 +179,7 @@ describe('MerchantSubscriptionsApi', () => {
     server.use(
       http.post(`${BASE_URL}/v1/merchant/invoices/inv_1/pay`, async ({ request }) => {
         expect(await request.json()).toEqual({
+          amount_mode: 'auto',
           accepted_assets: [{ chain: 'bsc-testnet', asset: 'USDT' }],
         })
         return HttpResponse.json({
@@ -194,6 +193,7 @@ describe('MerchantSubscriptionsApi', () => {
 
     const api = new MerchantSubscriptionsApi(new HttpClient({ baseUrl: BASE_URL }))
     const payment = await api.invoices.pay('inv_1', {
+      amountMode: 'auto',
       acceptedAssets: [{ chain: 'bsc-testnet', asset: 'USDT' }],
     })
 
@@ -210,6 +210,7 @@ describe('MerchantPortalApi', () => {
           success_url: 'https://merchant.test/success',
           cancel_url: 'https://merchant.test/cancel',
           walletconnect_project_id: 'wc_123',
+          amount_mode: 'auto',
           accepted_assets: [{ chain: 'base-sepolia', asset: 'USDC' }],
         })
         return HttpResponse.json({
@@ -229,6 +230,7 @@ describe('MerchantPortalApi', () => {
         successUrl: 'https://merchant.test/success',
         cancelUrl: 'https://merchant.test/cancel',
         walletConnectProjectId: 'wc_123',
+        amountMode: 'auto',
         acceptedAssets: [{ chain: 'base-sepolia', asset: 'USDC' }],
       },
     )

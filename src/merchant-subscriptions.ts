@@ -85,7 +85,6 @@ type WireMerchantBillingSettings = {
   pay_window_days: number
   renewal_lead_days: number
   grace_days: number
-  payment_amount_mode: MerchantBillingSettings['paymentAmountMode']
 }
 
 type WireMerchantSubscriptionCreateResult = {
@@ -583,7 +582,6 @@ function fromSettingsWire(wire: WireMerchantBillingSettings): MerchantBillingSet
     payWindowDays: wire.pay_window_days,
     renewalLeadDays: wire.renewal_lead_days,
     graceDays: wire.grace_days,
-    paymentAmountMode: wire.payment_amount_mode,
   }
 }
 
@@ -640,12 +638,12 @@ function toSettingsWire(input: UpdateMerchantBillingSettingsInput) {
     pay_window_days: input.payWindowDays,
     renewal_lead_days: input.renewalLeadDays,
     grace_days: input.graceDays,
-    payment_amount_mode: input.paymentAmountMode,
   }
 }
 
 function toPayInvoiceWire(input: PayMerchantInvoiceInput) {
   return {
+    amount_mode: input.amountMode,
     accepted_assets: input.acceptedAssets.map((entry) => ({
       chain: entry.chain,
       asset: entry.asset,
@@ -659,6 +657,7 @@ function toCheckoutSessionWire(input: CreateInvoiceCheckoutSessionInput) {
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
     walletconnect_project_id: input.walletConnectProjectId,
+    amount_mode: input.amountMode,
     accepted_assets: input.acceptedAssets.map((entry) => ({
       chain: entry.chain,
       asset: entry.asset,
