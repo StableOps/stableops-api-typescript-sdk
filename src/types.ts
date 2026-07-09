@@ -171,6 +171,66 @@ export type ReplayDeadLettersResult = {
   items: { originalId: string; deliveryId: string }[]
 }
 
+export type AgentSession = {
+  id: string
+  label: string | null
+  created_at: string
+  expires_at: string | null
+  revoked_at: string | null
+}
+
+export type AgentPolicy = {
+  id: string
+  allowed_tools: string[]
+  per_action_limit: string | null
+  daily_limit: string | null
+  require_approval: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type AgentAction = {
+  id: string
+  agent_session_id: string
+  tool: string
+  input: unknown
+  status: string
+  approver_id: string | null
+  decided_at: string | null
+  executed_at: string | null
+  result: unknown
+  error_message: string | null
+  created_at: string
+}
+
+export type AgentPage<T> = { items: T[]; has_more: boolean }
+
+export type CreateAgentSessionInput = { label?: string; expiresAt?: string }
+
+export type UpsertAgentPolicyInput = {
+  allowedTools?: string[]
+  perActionLimit?: string | null
+  dailyLimit?: string | null
+  requireApproval?: boolean
+}
+
+export type RequestAgentActionInput = {
+  agentSessionId: string
+  tool: string
+  input: Record<string, unknown>
+}
+
+export type RequestAgentActionResult = {
+  decision: 'auto_allowed' | 'pending_approval'
+  actionId: string
+}
+
+export type MarkAgentActionExecutedInput = {
+  agentSessionId: string
+  result?: unknown
+  errorMessage?: string
+}
+
 export type MerchantPlanInterval = 'month' | 'year' | 'week' | 'custom_days'
 
 export type EndUserSubscriptionStatus =

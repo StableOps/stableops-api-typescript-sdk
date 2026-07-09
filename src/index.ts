@@ -1,4 +1,5 @@
 import { AddressesApi } from './addresses'
+import { AgentsApi } from './agents'
 import { HttpClient, type ClientOptions } from './http'
 import { MerchantPortalApi, MerchantSubscriptionsApi } from './merchant-subscriptions'
 import { CheckoutSessionsApi, PaymentOrdersApi } from './payment-orders'
@@ -26,6 +27,7 @@ export class StableOps {
   readonly paymentOrders: PaymentOrdersApi
   readonly checkoutSessions: CheckoutSessionsApi
   readonly webhooks: WebhooksApi
+  readonly agents: AgentsApi
 
   constructor(options: StableOpsOptions = {}) {
     this.options = options
@@ -37,6 +39,7 @@ export class StableOps {
       checkoutBaseUrl: options.checkoutBaseUrl,
     })
     this.webhooks = new WebhooksApi(http)
+    this.agents = new AgentsApi(http)
   }
 
   portal(portalToken: string): MerchantPortalApi {
