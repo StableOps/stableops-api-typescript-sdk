@@ -182,8 +182,6 @@ export type AgentSession = {
 export type AgentPolicy = {
   id: string
   allowed_tools: string[]
-  per_action_limit: string | null
-  daily_limit: string | null
   require_approval: boolean
   created_at: string
   updated_at: string
@@ -209,8 +207,6 @@ export type CreateAgentSessionInput = { label?: string; expiresAt?: string }
 
 export type UpsertAgentPolicyInput = {
   allowedTools?: string[]
-  perActionLimit?: string | null
-  dailyLimit?: string | null
   requireApproval?: boolean
 }
 

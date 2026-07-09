@@ -53,8 +53,6 @@ export class AgentsApi {
       path: '/v1/agent/policy',
       body: {
         allowed_tools: input.allowedTools,
-        per_action_limit: input.perActionLimit,
-        daily_limit: input.dailyLimit,
         require_approval: input.requireApproval,
       },
     })

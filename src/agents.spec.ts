@@ -114,8 +114,6 @@ describe('AgentsApi', () => {
         HttpResponse.json({
           id: 'ap_1',
           allowed_tools: ['create_payment_order'],
-          per_action_limit: '100.00',
-          daily_limit: '1000.00',
           require_approval: true,
           created_at: '2026-07-01T00:00:00.000Z',
           updated_at: '2026-07-01T00:00:00.000Z',
@@ -129,8 +127,6 @@ describe('AgentsApi', () => {
     expect(policy).toEqual({
       id: 'ap_1',
       allowed_tools: ['create_payment_order'],
-      per_action_limit: '100.00',
-      daily_limit: '1000.00',
       require_approval: true,
       created_at: '2026-07-01T00:00:00.000Z',
       updated_at: '2026-07-01T00:00:00.000Z',
@@ -145,8 +141,6 @@ describe('AgentsApi', () => {
         return HttpResponse.json({
           id: 'ap_1',
           allowed_tools: ['create_payment_order'],
-          per_action_limit: '100.00',
-          daily_limit: '1000.00',
           require_approval: true,
           created_at: '2026-07-01T00:00:00.000Z',
           updated_at: '2026-07-01T00:10:00.000Z',
@@ -157,15 +151,11 @@ describe('AgentsApi', () => {
     const api = new AgentsApi(new HttpClient({ baseUrl: BASE_URL }))
     const policy = await api.upsertPolicy({
       allowedTools: ['create_payment_order'],
-      perActionLimit: '100.00',
-      dailyLimit: '1000.00',
       requireApproval: true,
     })
 
     expect(requestBody).toEqual({
       allowed_tools: ['create_payment_order'],
-      per_action_limit: '100.00',
-      daily_limit: '1000.00',
       require_approval: true,
     })
     expect(policy.updated_at).toBe('2026-07-01T00:10:00.000Z')
