@@ -20,7 +20,8 @@ export type RetryOptions = {
 }
 
 // debug 输出钩子：true → console.debug；函数 → 自定义 logger（结构化日志、上报等）。
-// 任何形态下都会先经过脱敏（apiKey / authorization / idempotency-key）。
+// 任何形态下都会先经过脱敏：请求与响应 headers（apiKey / authorization / idempotency-key /
+// cookie），以及请求 / 响应 body 中的已知敏感字段（secret / portal_token / client_secret）。
 export type DebugLogger = (event: DebugEvent) => void
 export type DebugOption = boolean | DebugLogger
 
@@ -58,12 +59,14 @@ export type ClientOptions = {
   baseUrl?: string
   // 注入自定义 fetch（测试 / Node18- 兼容 / 自托管 proxy）。
   fetch?: typeof fetch
-  // 单一总超时（毫秒），默认 30000。逐次尝试独立计时（含每次重试）；
+  // 单次尝试的超时（毫秒），默认 30000。每次尝试（含重试）独立计时，
+  // 最坏总耗时 ≈ (maxRetries + 1) × timeoutMs + 退避等待之和。
   // 标准 fetch 不暴露 connect/read 阶段，故不区分两者，保证跨运行时可移植。
   timeoutMs?: number
   retry?: RetryOptions
   // 打开后会输出初始化配置 / 每次请求 / 每次响应到 console.debug（或自定义 logger）。
-  // 敏感字段会自动脱敏（apiKey 仅保留前 4 + 后 4 字符；authorization / idempotency-key 同样规则）。
+  // 敏感字段会自动脱敏（apiKey 仅保留前 4 + 后 4 字符；headers 中的 authorization /
+  // idempotency-key / cookie 与 body 中的 secret / portal_token / client_secret 同样规则）。
   debug?: DebugOption
   // 内部测试钩子：注入确定性 sleep / random，使重试测试秒级完成且不 flaky。
   _sleep?: (ms: number) => Promise<void>
@@ -103,6 +106,19 @@ export class StableOpsError extends Error {
 
 function defaultSleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// 幂等键生成：优先 crypto.randomUUID。浏览器的非安全上下文（非 localhost 的 http://）
+// 只有 getRandomValues 没有 randomUUID，此时按 RFC 4122 手工拼一个 UUID v4 兜底。
+function generateIdempotencyKey(): string {
+  const cryptoObj = globalThis.crypto
+  if (typeof cryptoObj?.randomUUID === 'function') return cryptoObj.randomUUID()
+  const bytes = new Uint8Array(16)
+  cryptoObj.getRandomValues(bytes)
+  bytes[6] = (bytes[6] & 0x0f) | 0x40 // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80 // variant 10xx
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
 export class HttpClient {
@@ -173,10 +189,23 @@ export class HttpClient {
     // 幂等键：调用方显式提供则用之；否则所有写请求（非 GET）在循环外只生成一次，
     // 并在全部重试中复用同一个键 —— 保证「服务端已成功、响应在途丢失」时重发不产生重复副作用。
     const idempotencyKey =
-      init.idempotencyKey ?? (init.method === 'GET' ? undefined : globalThis.crypto.randomUUID())
+      init.idempotencyKey ?? (init.method === 'GET' ? undefined : generateIdempotencyKey())
     if (idempotencyKey) headers[IDEMPOTENCY_HEADER] = idempotencyKey
 
-    const body = init.body === undefined ? undefined : JSON.stringify(init.body)
+    let body: string | undefined
+    if (init.body !== undefined) {
+      try {
+        body = JSON.stringify(init.body)
+      } catch (err) {
+        // 循环引用等序列化失败也包装为 StableOpsError，维持「调用方只需 catch 一种错误类型」。
+        throw new StableOpsError(
+          0,
+          'serialization_error',
+          err instanceof Error ? err.message : String(err),
+          err,
+        )
+      }
+    }
     const canRetry = init.method === 'GET' || init.retryable === true
 
     const urlStr = url.toString()
@@ -193,7 +222,7 @@ export class HttpClient {
           method: init.method,
           url: urlStr,
           headers: maskHeaders(headers),
-          body: init.body,
+          body: maskBodySecrets(init.body),
           attempt,
         })
       }
@@ -213,8 +242,8 @@ export class HttpClient {
             url: urlStr,
             status: res.status,
             durationMs: this.now() - startedAt,
-            headers: headersToRecord(res.headers),
-            body: parsed,
+            headers: maskHeaders(headersToRecord(res.headers)),
+            body: maskBodySecrets(parsed),
             attempt,
           })
         }
@@ -281,6 +310,30 @@ export function maskSecret(value: string | undefined | null): string | undefined
 }
 
 const SENSITIVE_HEADERS = new Set(['authorization', IDEMPOTENCY_HEADER, 'cookie', 'set-cookie'])
+
+// body 中的已知敏感字段：webhook secret、portal token、checkout client secret。
+// 同时覆盖 snake_case（wire 格式）与 camelCase（调用方自带 body）两种写法。
+const SENSITIVE_BODY_FIELDS = new Set([
+  'secret',
+  'portal_token',
+  'portalToken',
+  'client_secret',
+  'clientSecret',
+])
+
+// 递归脱敏 body 中的敏感字段。不修改原对象；深度设上限防御自引用 / 超深结构。
+function maskBodySecrets(value: unknown, depth = 0): unknown {
+  if (depth > 8 || value === null || typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map((item) => maskBodySecrets(item, depth + 1))
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    out[k] =
+      SENSITIVE_BODY_FIELDS.has(k) && typeof v === 'string'
+        ? (maskSecret(v) ?? '***')
+        : maskBodySecrets(v, depth + 1)
+  }
+  return out
+}
 
 function maskHeaders(headers: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {}

@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { HttpClient, StableOpsError, maskSecret, type ClientOptions, type DebugEvent } from './http'
 
@@ -295,6 +295,100 @@ describe('HttpClient — debug 钩子', () => {
     const req = events.find((e) => e.type === 'request')
     if (!req || req.type !== 'request') throw new Error('expected request event')
     expect(req.headers['idempotency-key']).toBe('idem***-XYZ')
+  })
+
+  it('响应 headers 与请求 / 响应 body 中的敏感字段均被脱敏', async () => {
+    // 用 fake fetch 构造带敏感 header + 敏感 body 字段的响应，避免依赖 msw 对 header 的透传细节。
+    const fakeFetch: typeof fetch = async () =>
+      new Response(
+        JSON.stringify({
+          ok: true,
+          secret: 'whsec_abcdef123456',
+          portal_token: 'pt_1234567890abcdef',
+          nested: { client_secret: 'cs_test_1234567890abc' },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json', cookie: 'sess=abcdef123456789' },
+        },
+      )
+    const events: DebugEvent[] = []
+    const client = new HttpClient({
+      baseUrl: BASE_URL,
+      fetch: fakeFetch,
+      debug: (e) => events.push(e),
+      _sleep: async () => {},
+    })
+
+    await client.request({
+      method: 'POST',
+      path: '/v1/anything',
+      body: { note: 'x', clientSecret: 'cs_live_9876543210zyxw' },
+    })
+
+    const req = events.find((e) => e.type === 'request')
+    if (!req || req.type !== 'request') throw new Error('expected request event')
+    expect(req.body).toEqual({ note: 'x', clientSecret: 'cs_l***zyxw' })
+
+    const res = events.find((e) => e.type === 'response')
+    if (!res || res.type !== 'response') throw new Error('expected response event')
+    expect(res.headers.cookie).toBe('sess***6789')
+    expect(res.body).toEqual({
+      ok: true,
+      secret: 'whse***3456',
+      portal_token: 'pt_1***cdef',
+      nested: { client_secret: 'cs_t***0abc' },
+    })
+  })
+})
+
+describe('HttpClient — idempotency key 生成回退', () => {
+  it('crypto.randomUUID 缺失（浏览器非安全上下文）时用 getRandomValues 拼 UUID v4', async () => {
+    let key: string | undefined
+    const fakeFetch: typeof fetch = async (_input, init) => {
+      const h = init?.headers as Record<string, string> | undefined
+      key = h?.['idempotency-key']
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    // 只提供 getRandomValues 的 crypto —— 模拟非安全上下文；确定性字节便于精确断言。
+    vi.stubGlobal('crypto', {
+      getRandomValues: (arr: Uint8Array) => {
+        arr.fill(0xab)
+        return arr
+      },
+    })
+    try {
+      const client = new HttpClient({ baseUrl: BASE_URL, fetch: fakeFetch })
+      await client.request({ method: 'POST', path: '/v1/anything', body: {} })
+    } finally {
+      vi.unstubAllGlobals()
+    }
+    // 0xab 填充 + version/variant 位修正后的确定性结果；同时符合 UUID v4 形态。
+    expect(key).toBe('abababab-abab-4bab-abab-abababababab')
+    expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u)
+  })
+})
+
+describe('HttpClient — body 序列化失败', () => {
+  it('循环引用 body 包装为 StableOpsError code=serialization_error，不发出请求', async () => {
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+    let fetchCalls = 0
+    const fakeFetch: typeof fetch = async () => {
+      fetchCalls++
+      return new Response('{}', { status: 200 })
+    }
+    const client = new HttpClient({ baseUrl: BASE_URL, fetch: fakeFetch })
+    const err = await rejection(
+      client.request({ method: 'POST', path: '/v1/anything', body: circular }),
+    )
+    expect(err).toBeInstanceOf(StableOpsError)
+    expect(err.status).toBe(0)
+    expect(err.code).toBe('serialization_error')
+    expect(fetchCalls).toBe(0)
   })
 })
 

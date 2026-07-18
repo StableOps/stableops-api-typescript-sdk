@@ -6,6 +6,17 @@ import { CheckoutSessionsApi, PaymentOrdersApi } from './payment-orders'
 import { WebhooksApi } from './webhooks'
 
 export * from './types'
+export type {
+  Address,
+  AddressList,
+  AddressMode,
+  AddressPool,
+  AddressStatus,
+  ImportAddressInput,
+  ImportAddressResult,
+  ListAddressParams,
+  UpdateAddressInput,
+} from './addresses'
 export {
   StableOpsError,
   maskSecret,
@@ -43,19 +54,10 @@ export class StableOps {
   }
 
   portal(portalToken: string): MerchantPortalApi {
-    return new MerchantPortalApi(
-      new HttpClient({
-        apiKey: portalToken,
-        baseUrl: this.options.baseUrl,
-        fetch: this.options.fetch,
-        timeoutMs: this.options.timeoutMs,
-        retry: this.options.retry,
-        debug: this.options.debug,
-        _sleep: this.options._sleep,
-        _random: this.options._random,
-        _now: this.options._now,
-      }),
-      { checkoutBaseUrl: this.options.checkoutBaseUrl },
-    )
+    // spread 复用全部客户端配置（含未来新增字段），仅替换鉴权凭证为 portal token。
+    // HttpClient 会忽略多余的 checkoutBaseUrl 字段。
+    return new MerchantPortalApi(new HttpClient({ ...this.options, apiKey: portalToken }), {
+      checkoutBaseUrl: this.options.checkoutBaseUrl,
+    })
   }
 }

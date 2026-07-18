@@ -1,6 +1,6 @@
 # StableOps API SDK
 
-[![npm version](https://img.shields.io/npm/v/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![npm downloads](https://img.shields.io/npm/dm/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![License](https://img.shields.io/npm/l/@stableops/api-sdk)](./LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org) [![Node](https://img.shields.io/badge/Node-%3E%3D18-339933)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![npm downloads](https://img.shields.io/npm/dm/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![License](https://img.shields.io/npm/l/@stableops/api-sdk)](./LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org) [![Node](https://img.shields.io/badge/Node-%3E%3D20-339933)](https://nodejs.org)
 
 [中文文档](./README.zh-CN.md)
 
@@ -26,7 +26,7 @@ and verify webhook signatures.
 
 ## Requirements
 
-- Node.js 18 or newer.
+- Node.js 20 or newer.
 - A StableOps API key.
 - A server-side environment. Do not expose your API key in browser code.
 

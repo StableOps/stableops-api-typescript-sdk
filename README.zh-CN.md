@@ -1,6 +1,6 @@
 # StableOps API SDK
 
-[![npm version](https://img.shields.io/npm/v/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![npm downloads](https://img.shields.io/npm/dm/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![License](https://img.shields.io/npm/l/@stableops/api-sdk)](./LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org) [![Node](https://img.shields.io/badge/Node-%3E%3D18-339933)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![npm downloads](https://img.shields.io/npm/dm/@stableops/api-sdk)](https://www.npmjs.com/package/@stableops/api-sdk) [![License](https://img.shields.io/npm/l/@stableops/api-sdk)](./LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org) [![Node](https://img.shields.io/badge/Node-%3E%3D20-339933)](https://nodejs.org)
 
 [View English README](./README.md)
 
@@ -20,7 +20,7 @@ StableOps 将链上稳定币转账抽象成开发者熟悉的支付基础设施�
 
 ## 环境要求
 
-- Node.js 18 或更高版本。
+- Node.js 20 或更高版本。
 - StableOps API Key。
 - 服务端运行环境。不要把 API Key 暴露到浏览器代码里。
 

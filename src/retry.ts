@@ -20,17 +20,24 @@ export type BackoffOptions = {
   maxDelayMs: number
 }
 
+// Retry-After 的兜底上限：正常调低 maxDelayMs 不应影响遵守服务端限流指示，
+// 但也不能让配置错误的网关 / 被劫持的代理用超长 Retry-After 无限挂起调用方。
+// 实际上限取 max(maxDelayMs, 30s)：默认配置下最多等 30s，调大 maxDelayMs 可放宽。
+const RETRY_AFTER_CAP_MS = 30_000
+
 // 第 attempt 次重试（attempt 从 0 开始）的退避延迟（毫秒）：
 //   base  = min(maxDelayMs, baseDelayMs * 2 ** attempt)   // 指数退避，封顶 maxDelayMs
 //   delay = retryAfterMs ?? random() * base                // full jitter，避免重试惊群
-// 存在 Retry-After 时优先遵守服务端指示（maxDelayMs 只约束指数退避，不二次裁剪服务端指令）。
+// 存在 Retry-After 时优先遵守服务端指示，但 clamp 到 max(maxDelayMs, RETRY_AFTER_CAP_MS)。
 export function computeDelayMs(
   attempt: number,
   opts: BackoffOptions,
   random: () => number,
   retryAfterMs?: number,
 ): number {
-  if (retryAfterMs !== undefined) return retryAfterMs
+  if (retryAfterMs !== undefined) {
+    return Math.min(retryAfterMs, Math.max(opts.maxDelayMs, RETRY_AFTER_CAP_MS))
+  }
   const base = Math.min(opts.maxDelayMs, opts.baseDelayMs * 2 ** attempt)
   return random() * base
 }

@@ -58,6 +58,16 @@ describe('computeDelayMs', () => {
     expect(computeDelayMs(0, opts, () => 1, 1500)).toBe(1500)
     expect(computeDelayMs(5, opts, () => 0.5, 0)).toBe(0)
   })
+
+  it('Retry-After 被 clamp 到 max(maxDelayMs, 30s)，防止超长指令挂起调用方', () => {
+    // 默认 maxDelayMs=5000 < 30s：上限取 30s
+    expect(computeDelayMs(0, opts, () => 1, 86_400_000)).toBe(30_000)
+    expect(computeDelayMs(0, opts, () => 1, 29_000)).toBe(29_000)
+    // 调用方主动调大 maxDelayMs 时，上限随之放宽
+    const wide = { baseDelayMs: 200, maxDelayMs: 60_000 }
+    expect(computeDelayMs(0, wide, () => 1, 86_400_000)).toBe(60_000)
+    expect(computeDelayMs(0, wide, () => 1, 45_000)).toBe(45_000)
+  })
 })
 
 describe('parseRetryAfterMs', () => {

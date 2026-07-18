@@ -46,7 +46,8 @@ export class MockServer {
   private readonly server: Server
   private readonly orders = new Map<string, PaymentOrder>()
   private readonly endpoints = new Map<string, WebhookEndpoint>()
-  private readonly idempotency = new Map<string, PaymentOrder>()
+  // 幂等记录同时保存 body 指纹：与真实服务端一致，键复用 + body 不同要报 409。
+  private readonly idempotency = new Map<string, { order: PaymentOrder; fingerprint: string }>()
   private readonly idFactory: () => string
   private readonly secretFactory: () => string
 
@@ -93,12 +94,13 @@ export class MockServer {
         return this.createOrder(req, body, res)
       }
       if (req.method === 'GET' && url.pathname === '/v1/payment-orders') {
-        return json(res, 200, { items: Array.from(this.orders.values()) })
+        return this.listOrders(url, res)
       }
       const orderMatch = url.pathname.match(/^\/v1\/payment-orders\/([^/]+)$/u)
       if (req.method === 'GET' && orderMatch) {
         const order = this.orders.get(orderMatch[1])
-        return order ? json(res, 200, order) : json(res, 404, { code: 'not_found' })
+        // 与真实 API 一致：详情响应带 timeline。
+        return order ? json(res, 200, orderResponse(order, true)) : json(res, 404, { code: 'not_found' })
       }
       const cancelMatch = url.pathname.match(/^\/v1\/payment-orders\/([^/]+)\/cancel$/u)
       if (req.method === 'POST' && cancelMatch) {
@@ -131,9 +133,20 @@ export class MockServer {
 
   private createOrder(req: IncomingMessage, body: unknown, res: ServerResponse) {
     const idem = headerValue(req, 'idempotency-key')
-    if (idem && this.idempotency.has(idem)) {
-      const previous = this.idempotency.get(idem)!
-      return json(res, 201, previous)
+    const fingerprint = JSON.stringify(body ?? null)
+    if (idem) {
+      const previous = this.idempotency.get(idem)
+      if (previous) {
+        if (previous.fingerprint !== fingerprint) {
+          // 与真实服务端一致（Nest ConflictException 的响应形状）。
+          return json(res, 409, {
+            statusCode: 409,
+            message: 'idempotency key reused with different request body',
+            error: 'Conflict',
+          })
+        }
+        return json(res, 201, orderResponse(previous.order))
+      }
     }
     const input = body as Record<string, unknown>
     const id = this.idFactory()
@@ -162,8 +175,19 @@ export class MockServer {
       ],
     }
     this.orders.set(id, order)
-    if (idem) this.idempotency.set(idem, order)
-    json(res, 201, order)
+    if (idem) this.idempotency.set(idem, { order, fingerprint })
+    json(res, 201, orderResponse(order))
+  }
+
+  // 与真实 API 对齐：支持 status / limit / offset 过滤，最近创建的在前，响应不带 timeline。
+  private listOrders(url: URL, res: ServerResponse) {
+    const status = url.searchParams.get('status')
+    const limit = parseNonNegativeInt(url.searchParams.get('limit')) ?? 50
+    const offset = parseNonNegativeInt(url.searchParams.get('offset')) ?? 0
+    let items = Array.from(this.orders.values()).reverse()
+    if (status) items = items.filter((order) => order.status === status)
+    items = items.slice(offset, offset + limit)
+    json(res, 200, { items: items.map((order) => orderResponse(order)) })
   }
 
   private cancelOrder(id: string, res: ServerResponse) {
@@ -176,7 +200,7 @@ export class MockServer {
       reason: 'manual_cancel',
       at: new Date().toISOString(),
     })
-    json(res, 200, order)
+    json(res, 200, orderResponse(order))
   }
 
   private createEndpoint(body: unknown, res: ServerResponse) {
@@ -255,6 +279,22 @@ function headerValue(req: IncomingMessage, name: string): string | undefined {
   const raw = req.headers[name]
   if (Array.isArray(raw)) return raw[0]
   return raw
+}
+
+function parseNonNegativeInt(value: string | null): number | undefined {
+  if (value === null) return undefined
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 0) return undefined
+  return parsed
+}
+
+// 与真实 API 一致：只有详情（GET 单条）响应携带 timeline，创建 / 列表 / 取消都不带。
+function orderResponse(
+  order: PaymentOrder,
+  includeTimeline = false,
+): Omit<PaymentOrder, 'timeline'> & { timeline?: PaymentOrder['timeline'] } {
+  const { timeline, ...response } = order
+  return includeTimeline ? { ...response, timeline } : response
 }
 
 function webhookEndpointResponse(

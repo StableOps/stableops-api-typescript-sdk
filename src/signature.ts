@@ -53,6 +53,10 @@ export function buildSignatureHeaderForSecrets({
   const signatures = secrets
     .filter((secret) => secret.length > 0)
     .map((secret) => createHmac('sha256', secret).update(payload).digest('hex'))
+  if (signatures.length === 0) {
+    // 全空 secrets 会产出没有 v1 段的畸形签名头（接收端报 invalid_format）——在构造侧提前抛错。
+    throw new Error('at least one non-empty secret is required to build a signature header')
+  }
   return `t=${timestamp},${signatures.map((signature) => `v1=${signature}`).join(',')}`
 }
 
