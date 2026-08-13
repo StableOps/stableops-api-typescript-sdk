@@ -83,6 +83,25 @@ describe('WebhooksApi', () => {
     })
   })
 
+  it('返回端点分页元数据并支持删除端点', async () => {
+    server.use(
+      http.get(ENDPOINTS, ({ request }) => {
+        expect(new URL(request.url).searchParams.get('offset')).toBe('20')
+        return HttpResponse.json({ items: [], has_more: true, total: 21 })
+      }),
+      http.delete(`${ENDPOINTS}/we_1`, () => HttpResponse.json({ success: true })),
+    )
+
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
+
+    await expect(api.listEndpointsPage({ limit: 20, offset: 20 })).resolves.toEqual({
+      items: [],
+      hasMore: true,
+      total: 21,
+    })
+    await expect(api.removeEndpoint('we_1')).resolves.toEqual({ success: true })
+  })
+
   it('按 event id 重放到指定端点', async () => {
     let requestBody: unknown
     server.use(
@@ -124,6 +143,8 @@ describe('WebhooksApi', () => {
               created_at: '2026-06-01T00:00:00.000Z',
             },
           ],
+          has_more: false,
+          total: 1,
         })
       }),
     )
@@ -143,6 +164,22 @@ describe('WebhooksApi', () => {
       webhookEndpointId: 'we_1',
       eventId: 'evt_1',
       responseDurationMs: 42,
+    })
+  })
+
+  it('返回投递分页元数据和 offset', async () => {
+    server.use(
+      http.get(`${BASE_URL}/v1/webhook-deliveries`, ({ request }) => {
+        expect(new URL(request.url).searchParams.get('offset')).toBe('40')
+        return HttpResponse.json({ items: [], has_more: true, total: 99 })
+      }),
+    )
+
+    const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
+    await expect(api.listDeliveriesPage({ limit: 20, offset: 40 })).resolves.toEqual({
+      items: [],
+      hasMore: true,
+      total: 99,
     })
   })
 

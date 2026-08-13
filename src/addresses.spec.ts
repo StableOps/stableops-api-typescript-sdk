@@ -35,6 +35,7 @@ describe('AddressesApi', () => {
             },
           ],
           has_more: true,
+          total: 2,
         }),
       ),
     )
@@ -54,6 +55,7 @@ describe('AddressesApi', () => {
         },
       ],
       hasMore: true,
+      total: 2,
     })
     expect(result.items[0]).not.toHaveProperty('created_at')
   })
@@ -63,7 +65,7 @@ describe('AddressesApi', () => {
     server.use(
       http.get(ADDRESSES, ({ request }) => {
         search = new URL(request.url).search
-        return HttpResponse.json({ items: [], has_more: false })
+        return HttpResponse.json({ items: [], has_more: false, total: 0 })
       }),
     )
 

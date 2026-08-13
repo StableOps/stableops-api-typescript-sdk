@@ -62,6 +62,7 @@ describe('AgentsApi', () => {
             },
           ],
           has_more: false,
+          total: 1,
         })
       }),
     )
@@ -83,6 +84,7 @@ describe('AgentsApi', () => {
         },
       ],
       has_more: false,
+      total: 1,
     })
   })
 
@@ -106,6 +108,27 @@ describe('AgentsApi', () => {
 
     expect(called).toBe(true)
     expect(session.revoked_at).toBe('2026-07-01T00:10:00.000Z')
+  })
+
+  it('恢复 agent session 时请求 restore endpoint', async () => {
+    server.use(
+      http.post(`${SESSIONS}/as_1/restore`, () =>
+        HttpResponse.json({
+          id: 'as_1',
+          label: 'ops-bot',
+          created_at: '2026-07-01T00:00:00.000Z',
+          expires_at: null,
+          revoked_at: null,
+        }),
+      ),
+    )
+
+    const api = new AgentsApi(new HttpClient({ baseUrl: BASE_URL }))
+
+    await expect(api.restoreSession('as_1')).resolves.toMatchObject({
+      id: 'as_1',
+      revoked_at: null,
+    })
   })
 
   it('读取 agent policy 时请求 policy endpoint', async () => {
@@ -183,6 +206,7 @@ describe('AgentsApi', () => {
             },
           ],
           has_more: false,
+          total: 1,
         })
       }),
     )
@@ -200,6 +224,7 @@ describe('AgentsApi', () => {
       tool: 'create_payment_order',
     })
     expect(actions.has_more).toBe(false)
+    expect(actions.total).toBe(1)
   })
 
   it('请求 agent action 时映射 agentSessionId 请求字段', async () => {

@@ -51,11 +51,11 @@ const order = await stableops.paymentOrders.create(
   {
     merchantOrderId: 'order_123',
     amount: '49.00',
-    settlementAsset: 'USDC',
     acceptedAssets: [
       { chain: 'base-sepolia', asset: 'USDC' },
       { chain: 'ethereum-sepolia', asset: 'USDC' },
     ],
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     metadata: { customerId: 'cus_123', plan: 'pro_monthly' },
   },
   { idempotencyKey: 'order_123:create' },
@@ -72,7 +72,7 @@ import { MockServer } from '@stableops/api-sdk/mock'
 ```
 
 默认的 `@stableops/api-sdk` 入口不引入 Node `crypto` 或 `http` 模块。因此，只要
-服务端 Edge Runtime 提供 `fetch`、`AbortController` 和 `crypto.randomUUID`，
+服务端 Edge Runtime 提供 `fetch`、`AbortController` 和 Web Crypto `getRandomValues`，
 就可以使用 API Client。
 
 前端只需要拿到订单 id、金额和 `paymentInstructions`。API Key 和创建订单的逻辑应始终放在服务端。

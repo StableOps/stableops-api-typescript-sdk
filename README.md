@@ -57,11 +57,11 @@ const order = await stableops.paymentOrders.create(
   {
     merchantOrderId: 'order_123',
     amount: '49.00',
-    settlementAsset: 'USDC',
     acceptedAssets: [
       { chain: 'base-sepolia', asset: 'USDC' },
       { chain: 'ethereum-sepolia', asset: 'USDC' },
     ],
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     metadata: { customerId: 'cus_123', plan: 'pro_monthly' },
   },
   { idempotencyKey: 'order_123:create' },
@@ -79,7 +79,7 @@ import { MockServer } from '@stableops/api-sdk/mock'
 
 The default `@stableops/api-sdk` entry does not import Node `crypto` or `http`
 modules, so edge-compatible server runtimes can use the API client when they
-provide `fetch`, `AbortController`, and `crypto.randomUUID`.
+provide `fetch`, `AbortController`, and Web Crypto `getRandomValues`.
 
 Return only the order id, amount, and `paymentInstructions` to your frontend.
 The actual API key and order creation flow should stay on your server.

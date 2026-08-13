@@ -17,6 +17,13 @@ export type {
   ListAddressParams,
   UpdateAddressInput,
 } from './addresses'
+export type { ListPaymentOrdersParams, PaymentOrderListPage } from './payment-orders'
+export type {
+  ListWebhookDeliveriesParams,
+  ListWebhookEndpointsParams,
+  WebhookDeliveryListPage,
+  WebhookEndpointListPage,
+} from './webhooks'
 export {
   StableOpsError,
   maskSecret,

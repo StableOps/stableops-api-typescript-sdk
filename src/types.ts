@@ -201,7 +201,7 @@ export type AgentAction = {
   created_at: string
 }
 
-export type AgentPage<T> = { items: T[]; has_more: boolean }
+export type AgentPage<T> = { items: T[]; has_more: boolean; total: number }
 
 export type CreateAgentSessionInput = { label?: string; expiresAt?: string }
 

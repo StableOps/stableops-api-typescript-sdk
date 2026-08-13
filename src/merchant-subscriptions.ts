@@ -175,7 +175,6 @@ class MerchantPlansResource {
       path: '/v1/merchant/plans',
       body: toPlanWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromPlanWire(wire)
   }
@@ -186,7 +185,6 @@ class MerchantPlansResource {
       path: `/v1/merchant/plans/${encodeURIComponent(id)}`,
       body: toPlanWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromPlanWire(wire)
   }
@@ -196,7 +194,6 @@ class MerchantPlansResource {
       method: 'DELETE',
       path: `/v1/merchant/plans/${encodeURIComponent(id)}`,
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
   }
 }
@@ -210,7 +207,6 @@ class MerchantSubscriptionResource {
       path: '/v1/merchant/subscriptions',
       body: toCreateSubscriptionWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromCreateResultWire(wire)
   }
@@ -253,7 +249,6 @@ class MerchantSubscriptionResource {
       path: `/v1/merchant/subscriptions/${encodeURIComponent(id)}/change-plan`,
       body: { plan_id: input.planId },
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromChangePlanResultWire(wire)
   }
@@ -264,7 +259,6 @@ class MerchantSubscriptionResource {
       path: `/v1/merchant/subscriptions/${encodeURIComponent(id)}/cancel`,
       body: { immediate: input.immediate },
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromSubscriptionWire(wire)
   }
@@ -274,7 +268,6 @@ class MerchantSubscriptionResource {
       method: 'POST',
       path: `/v1/merchant/subscriptions/${encodeURIComponent(id)}/resume`,
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromSubscriptionWire(wire)
   }
@@ -316,7 +309,6 @@ class MerchantInvoicesResource {
       path: `/v1/merchant/invoices/${encodeURIComponent(id)}/pay`,
       body: toPayInvoiceWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromPayInvoiceWire(wire)
   }
@@ -347,7 +339,6 @@ class MerchantSettingsResource {
       path: '/v1/merchant/settings',
       body: toSettingsWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromSettingsWire(wire)
   }
@@ -365,7 +356,6 @@ class MerchantPortalSessionsResource {
         expires_at: input.expiresAt,
       },
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromPortalSessionWire(wire)
   }
@@ -375,7 +365,6 @@ class MerchantPortalSessionsResource {
       method: 'DELETE',
       path: `/v1/merchant/portal-sessions/${encodeURIComponent(id)}`,
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
   }
 }
@@ -409,7 +398,6 @@ class MerchantPortalSubscriptionResource {
       path: '/v1/merchant/portal/subscription/cancel',
       body: { immediate: input.immediate },
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromSubscriptionWire(wire)
   }
@@ -419,7 +407,6 @@ class MerchantPortalSubscriptionResource {
       method: 'POST',
       path: '/v1/merchant/portal/subscription/resume',
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromSubscriptionWire(wire)
   }
@@ -430,7 +417,6 @@ class MerchantPortalSubscriptionResource {
       path: '/v1/merchant/portal/subscription/change-plan',
       body: { plan_id: input.planId },
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromChangePlanResultWire(wire)
   }
@@ -468,7 +454,6 @@ class MerchantPortalInvoicesResource {
       path: `/v1/merchant/portal/invoices/${encodeURIComponent(id)}/pay`,
       body: toPayInvoiceWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return fromPayInvoiceWire(wire)
   }
@@ -479,7 +464,6 @@ class MerchantPortalInvoicesResource {
       path: `/v1/merchant/portal/invoices/${encodeURIComponent(id)}/checkout-session`,
       body: toCheckoutSessionWire(input),
       idempotencyKey: options.idempotencyKey,
-      retryable: true,
     })
     return {
       checkoutSessionId: wire.checkout_session_id,

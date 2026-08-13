@@ -60,6 +60,22 @@ describe('PaymentOrdersApi', () => {
     ])
     expect(order).not.toHaveProperty('paymentInstruction')
   })
+
+  it('返回完整分页元数据并映射 offset', async () => {
+    server.use(
+      http.get(ORDERS, ({ request }) => {
+        expect(new URL(request.url).searchParams.get('offset')).toBe('20')
+        return HttpResponse.json({ items: [], has_more: true, total: 42 })
+      }),
+    )
+
+    const api = new PaymentOrdersApi(new HttpClient({ baseUrl: BASE_URL }))
+    await expect(api.listPage({ limit: 20, offset: 20 })).resolves.toEqual({
+      items: [],
+      hasMore: true,
+      total: 42,
+    })
+  })
 })
 
 describe('CheckoutSessionsApi', () => {

@@ -28,12 +28,34 @@ export class WebhooksApi {
     return fromWire(wire)
   }
 
-  async listEndpoints(): Promise<WebhookEndpoint[]> {
-    const wire = await this.http.request<{ items: WireWebhookEndpoint[] }>({
+  async listEndpoints(params: ListWebhookEndpointsParams = {}): Promise<WebhookEndpoint[]> {
+    return (await this.listEndpointsPage(params)).items
+  }
+
+  async listEndpointsPage(
+    params: ListWebhookEndpointsParams = {},
+  ): Promise<WebhookEndpointListPage> {
+    const wire = await this.http.request<{
+      items: WireWebhookEndpoint[]
+      has_more: boolean
+      total: number
+    }>({
       method: 'GET',
       path: '/v1/webhook-endpoints',
+      query: { limit: params.limit, offset: params.offset },
     })
-    return wire.items.map(fromWire)
+    return {
+      items: wire.items.map(fromWire),
+      hasMore: wire.has_more,
+      total: wire.total,
+    }
+  }
+
+  async removeEndpoint(endpointId: string): Promise<{ success: boolean }> {
+    return this.http.request<{ success: boolean }>({
+      method: 'DELETE',
+      path: `/v1/webhook-endpoints/${encodeURIComponent(endpointId)}`,
+    })
   }
 
   async updateEndpoint(
@@ -69,14 +91,19 @@ export class WebhooksApi {
   }
 
   async listDeliveries(
-    params: {
-      status?: WebhookDeliveryStatus
-      endpointId?: string
-      paymentOrderId?: string
-      limit?: number
-    } = {},
+    params: ListWebhookDeliveriesParams = {},
   ): Promise<WebhookDelivery[]> {
-    const wire = await this.http.request<{ items: WireWebhookDelivery[] }>({
+    return (await this.listDeliveriesPage(params)).items
+  }
+
+  async listDeliveriesPage(
+    params: ListWebhookDeliveriesParams = {},
+  ): Promise<WebhookDeliveryListPage> {
+    const wire = await this.http.request<{
+      items: WireWebhookDelivery[]
+      has_more: boolean
+      total: number
+    }>({
       method: 'GET',
       path: '/v1/webhook-deliveries',
       query: {
@@ -84,9 +111,14 @@ export class WebhooksApi {
         endpoint_id: params.endpointId,
         payment_order_id: params.paymentOrderId,
         limit: params.limit,
+        offset: params.offset,
       },
     })
-    return wire.items.map(fromWireDelivery)
+    return {
+      items: wire.items.map(fromWireDelivery),
+      hasMore: wire.has_more,
+      total: wire.total,
+    }
   }
 
   async replayDelivery(deliveryId: string): Promise<ReplayDeliveryResult> {
@@ -113,6 +145,28 @@ export class WebhooksApi {
       })),
     }
   }
+}
+
+export type ListWebhookEndpointsParams = { limit?: number; offset?: number }
+
+export type WebhookEndpointListPage = {
+  items: WebhookEndpoint[]
+  hasMore: boolean
+  total: number
+}
+
+export type ListWebhookDeliveriesParams = {
+  status?: WebhookDeliveryStatus
+  endpointId?: string
+  paymentOrderId?: string
+  limit?: number
+  offset?: number
+}
+
+export type WebhookDeliveryListPage = {
+  items: WebhookDelivery[]
+  hasMore: boolean
+  total: number
 }
 
 type WireWebhookEndpoint = {

@@ -25,6 +25,7 @@ export type Address = {
 export type AddressList = {
   items: Address[]
   hasMore: boolean
+  total: number
 }
 
 export type ImportAddressInput = {
@@ -93,7 +94,11 @@ export class AddressesApi {
   }
 
   async list(params: ListAddressParams = {}): Promise<AddressList> {
-    const wire = await this.http.request<{ items: WireAddress[]; has_more: boolean }>({
+    const wire = await this.http.request<{
+      items: WireAddress[]
+      has_more: boolean
+      total: number
+    }>({
       method: 'GET',
       path: '/v1/addresses',
       query: {
@@ -106,6 +111,7 @@ export class AddressesApi {
     return {
       items: wire.items.map(fromWire),
       hasMore: wire.has_more,
+      total: wire.total,
     }
   }
 

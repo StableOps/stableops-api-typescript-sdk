@@ -35,14 +35,26 @@ export class PaymentOrdersApi {
   }
 
   async list(
-    params: { status?: PaymentOrderStatus; limit?: number } = {},
+    params: ListPaymentOrdersParams = {},
   ): Promise<PaymentOrder[]> {
-    const wire = await this.http.request<{ items: WirePaymentOrder[] }>({
+    return (await this.listPage(params)).items
+  }
+
+  async listPage(params: ListPaymentOrdersParams = {}): Promise<PaymentOrderListPage> {
+    const wire = await this.http.request<{
+      items: WirePaymentOrder[]
+      has_more: boolean
+      total: number
+    }>({
       method: 'GET',
       path: '/v1/payment-orders',
-      query: { status: params.status, limit: params.limit },
+      query: { status: params.status, limit: params.limit, offset: params.offset },
     })
-    return wire.items.map(fromWire)
+    return {
+      items: wire.items.map(fromWire),
+      hasMore: wire.has_more,
+      total: wire.total,
+    }
   }
 
   async cancel(id: string): Promise<PaymentOrder> {
@@ -52,6 +64,18 @@ export class PaymentOrdersApi {
     })
     return fromWire(wire)
   }
+}
+
+export type ListPaymentOrdersParams = {
+  status?: PaymentOrderStatus
+  limit?: number
+  offset?: number
+}
+
+export type PaymentOrderListPage = {
+  items: PaymentOrder[]
+  hasMore: boolean
+  total: number
 }
 
 export type CheckoutSessionsApiOptions = {

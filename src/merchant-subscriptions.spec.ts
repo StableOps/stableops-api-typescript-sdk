@@ -85,6 +85,35 @@ const paymentOrderWire = {
 }
 
 describe('MerchantSubscriptionsApi', () => {
+  it('非幂等商户写接口遇到 5xx 时不自动重试', async () => {
+    let calls = 0
+    server.use(
+      http.post(`${BASE_URL}/v1/merchant/plans`, () => {
+        calls += 1
+        return HttpResponse.json({ code: 'temporary', message: 'try later' }, { status: 503 })
+      }),
+    )
+    const api = new MerchantSubscriptionsApi(
+      new HttpClient({
+        baseUrl: BASE_URL,
+        retry: { maxRetries: 2, baseDelayMs: 0 },
+        _sleep: async () => {},
+      }),
+    )
+
+    await expect(
+      api.plans.create({
+        code: 'starter',
+        name: 'Starter',
+        groupKey: 'demo',
+        amount: '0.01',
+        interval: 'month',
+        intervalCount: 1,
+      }),
+    ).rejects.toMatchObject({ status: 503 })
+    expect(calls).toBe(1)
+  })
+
   it('creates plans with snake_case body and idempotency key', async () => {
     let idempotencyKey = ''
     server.use(

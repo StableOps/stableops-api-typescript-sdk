@@ -40,6 +40,13 @@ export class AgentsApi {
     })
   }
 
+  async restoreSession(id: string): Promise<AgentSession> {
+    return this.http.request<AgentSession>({
+      method: 'POST',
+      path: `/v1/agent/sessions/${encodeURIComponent(id)}/restore`,
+    })
+  }
+
   async getPolicy(): Promise<AgentPolicy> {
     return this.http.request<AgentPolicy>({
       method: 'GET',
