@@ -32,6 +32,11 @@ describe('MockServer webhook contract', () => {
 
     const listed = await client.webhooks.listEndpoints()
     expect(listed[0]).not.toHaveProperty('secret')
+    await expect(client.webhooks.listEndpointsPage({ limit: 1 })).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'we_1' })],
+      hasMore: false,
+      total: 1,
+    })
 
     const updated = await client.webhooks.updateEndpoint('we_1', {
       description: 'updated',
@@ -48,6 +53,23 @@ describe('MockServer webhook contract', () => {
 
     const listedAfterRotation = await client.webhooks.listEndpoints()
     expect(listedAfterRotation[0]).not.toHaveProperty('secret')
+  })
+
+  it('端点列表返回完整分页信息并应用 limit / offset', async () => {
+    let seq = 0
+    mock = new MockServer({ idFactory: () => `we_${++seq}` })
+    const { url } = await mock.listen()
+    const client = new StableOps({ baseUrl: url })
+
+    await client.webhooks.createEndpoint({ url: 'https://example.com/hooks/1' })
+    await client.webhooks.createEndpoint({ url: 'https://example.com/hooks/2' })
+    await client.webhooks.createEndpoint({ url: 'https://example.com/hooks/3' })
+
+    await expect(client.webhooks.listEndpointsPage({ limit: 1, offset: 1 })).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'we_2' })],
+      hasMore: true,
+      total: 3,
+    })
   })
 })
 
@@ -85,6 +107,19 @@ describe('MockServer payment order contract', () => {
     ).rejects.toMatchObject({ status: 409 })
   })
 
+  it('不同幂等键不能绕过 merchant_order_id 唯一约束', async () => {
+    let seq = 0
+    mock = new MockServer({ idFactory: () => `po_${++seq}` })
+    const { url } = await mock.listen()
+    const client = new StableOps({ baseUrl: url })
+
+    await client.paymentOrders.create(CREATE_INPUT, { idempotencyKey: 'key_1' })
+    await expect(
+      client.paymentOrders.create(CREATE_INPUT, { idempotencyKey: 'key_2' }),
+    ).rejects.toMatchObject({ status: 409 })
+    expect(mock.snapshot().orders).toHaveLength(1)
+  })
+
   it('列表支持 status / limit 过滤，且最近创建的在前', async () => {
     let seq = 0
     mock = new MockServer({ idFactory: () => `po_${++seq}` })
@@ -92,8 +127,14 @@ describe('MockServer payment order contract', () => {
     const client = new StableOps({ baseUrl: url })
 
     const a = await client.paymentOrders.create(CREATE_INPUT, { idempotencyKey: 'a' })
-    const b = await client.paymentOrders.create(CREATE_INPUT, { idempotencyKey: 'b' })
-    const c = await client.paymentOrders.create(CREATE_INPUT, { idempotencyKey: 'c' })
+    const b = await client.paymentOrders.create(
+      { ...CREATE_INPUT, merchantOrderId: 'm_2' },
+      { idempotencyKey: 'b' },
+    )
+    const c = await client.paymentOrders.create(
+      { ...CREATE_INPUT, merchantOrderId: 'm_3' },
+      { idempotencyKey: 'c' },
+    )
     await client.paymentOrders.cancel(a.id)
 
     const created = await client.paymentOrders.list({ status: 'created' })
@@ -101,6 +142,12 @@ describe('MockServer payment order contract', () => {
 
     const limited = await client.paymentOrders.list({ limit: 1 })
     expect(limited.map((order) => order.id)).toEqual([c.id])
+
+    await expect(client.paymentOrders.listPage({ limit: 1, offset: 1 })).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: b.id })],
+      hasMore: true,
+      total: 3,
+    })
   })
 
   it('timeline 只出现在详情响应，创建 / 列表 / 取消不带', async () => {

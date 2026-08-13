@@ -174,34 +174,34 @@ export type ReplayDeadLettersResult = {
 export type AgentSession = {
   id: string
   label: string | null
-  created_at: string
-  expires_at: string | null
-  revoked_at: string | null
+  createdAt: string
+  expiresAt: string | null
+  revokedAt: string | null
 }
 
 export type AgentPolicy = {
   id: string
-  allowed_tools: string[]
-  require_approval: boolean
-  created_at: string
-  updated_at: string
+  allowedTools: string[]
+  requireApproval: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export type AgentAction = {
   id: string
-  agent_session_id: string
+  agentSessionId: string
   tool: string
   input: unknown
   status: string
-  approver_id: string | null
-  decided_at: string | null
-  executed_at: string | null
+  approverId: string | null
+  decidedAt: string | null
+  executedAt: string | null
   result: unknown
-  error_message: string | null
-  created_at: string
+  errorMessage: string | null
+  createdAt: string
 }
 
-export type AgentPage<T> = { items: T[]; has_more: boolean; total: number }
+export type AgentPage<T> = { items: T[]; hasMore: boolean; total: number }
 
 export type CreateAgentSessionInput = { label?: string; expiresAt?: string }
 

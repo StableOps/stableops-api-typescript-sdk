@@ -45,6 +45,7 @@ type WebhookEndpoint = {
 export class MockServer {
   private readonly server: Server
   private readonly orders = new Map<string, PaymentOrder>()
+  private readonly ordersByMerchantOrderId = new Map<string, PaymentOrder>()
   private readonly endpoints = new Map<string, WebhookEndpoint>()
   // 幂等记录同时保存 body 指纹：与真实服务端一致，键复用 + body 不同要报 409。
   private readonly idempotency = new Map<string, { order: PaymentOrder; fingerprint: string }>()
@@ -110,11 +111,7 @@ export class MockServer {
         return this.createEndpoint(body, res)
       }
       if (req.method === 'GET' && url.pathname === '/v1/webhook-endpoints') {
-        return json(res, 200, {
-          items: Array.from(this.endpoints.values(), (endpoint) =>
-            webhookEndpointResponse(endpoint),
-          ),
-        })
+        return this.listEndpoints(url, res)
       }
       const endpointMatch = url.pathname.match(/^\/v1\/webhook-endpoints\/([^/]+)$/u)
       if (req.method === 'PATCH' && endpointMatch) {
@@ -149,11 +146,19 @@ export class MockServer {
       }
     }
     const input = body as Record<string, unknown>
+    const merchantOrderId = String(input.merchant_order_id ?? '')
+    if (this.ordersByMerchantOrderId.has(merchantOrderId)) {
+      return json(res, 409, {
+        statusCode: 409,
+        message: 'merchant_order_id already used',
+        error: 'Conflict',
+      })
+    }
     const id = this.idFactory()
     const accepted = (input.accepted_assets as { chain: string; asset: string }[]) ?? []
     const order: PaymentOrder = {
       id,
-      merchant_order_id: String(input.merchant_order_id ?? ''),
+      merchant_order_id: merchantOrderId,
       amount: String(input.amount ?? '0'),
       requested_amount: String(input.amount ?? '0'),
       settlement_asset: 'USDC',
@@ -175,6 +180,7 @@ export class MockServer {
       ],
     }
     this.orders.set(id, order)
+    this.ordersByMerchantOrderId.set(merchantOrderId, order)
     if (idem) this.idempotency.set(idem, { order, fingerprint })
     json(res, 201, orderResponse(order))
   }
@@ -186,8 +192,13 @@ export class MockServer {
     const offset = parseNonNegativeInt(url.searchParams.get('offset')) ?? 0
     let items = Array.from(this.orders.values()).reverse()
     if (status) items = items.filter((order) => order.status === status)
-    items = items.slice(offset, offset + limit)
-    json(res, 200, { items: items.map((order) => orderResponse(order)) })
+    const total = items.length
+    const pageItems = items.slice(offset, offset + limit)
+    json(res, 200, {
+      items: pageItems.map((order) => orderResponse(order)),
+      has_more: offset + pageItems.length < total,
+      total,
+    })
   }
 
   private cancelOrder(id: string, res: ServerResponse) {
@@ -219,6 +230,19 @@ export class MockServer {
     }
     this.endpoints.set(id, endpoint)
     json(res, 201, webhookEndpointResponse(endpoint, true))
+  }
+
+  private listEndpoints(url: URL, res: ServerResponse) {
+    const limit = parseNonNegativeInt(url.searchParams.get('limit')) ?? 50
+    const offset = parseNonNegativeInt(url.searchParams.get('offset')) ?? 0
+    const items = Array.from(this.endpoints.values()).reverse()
+    const total = items.length
+    const pageItems = items.slice(offset, offset + limit)
+    json(res, 200, {
+      items: pageItems.map((endpoint) => webhookEndpointResponse(endpoint)),
+      has_more: offset + pageItems.length < total,
+      total,
+    })
   }
 
   private updateEndpoint(id: string, body: unknown, res: ServerResponse) {

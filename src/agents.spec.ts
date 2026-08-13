@@ -40,9 +40,9 @@ describe('AgentsApi', () => {
     expect(session).toEqual({
       id: 'as_1',
       label: 'ops-bot',
-      created_at: '2026-07-01T00:00:00.000Z',
-      expires_at: null,
-      revoked_at: null,
+      createdAt: '2026-07-01T00:00:00.000Z',
+      expiresAt: null,
+      revokedAt: null,
     })
   })
 
@@ -78,12 +78,12 @@ describe('AgentsApi', () => {
         {
           id: 'as_1',
           label: 'ops-bot',
-          created_at: '2026-07-01T00:00:00.000Z',
-          expires_at: null,
-          revoked_at: null,
+          createdAt: '2026-07-01T00:00:00.000Z',
+          expiresAt: null,
+          revokedAt: null,
         },
       ],
-      has_more: false,
+      hasMore: false,
       total: 1,
     })
   })
@@ -107,7 +107,7 @@ describe('AgentsApi', () => {
     const session = await api.revokeSession('as_1')
 
     expect(called).toBe(true)
-    expect(session.revoked_at).toBe('2026-07-01T00:10:00.000Z')
+    expect(session.revokedAt).toBe('2026-07-01T00:10:00.000Z')
   })
 
   it('恢复 agent session 时请求 restore endpoint', async () => {
@@ -127,7 +127,7 @@ describe('AgentsApi', () => {
 
     await expect(api.restoreSession('as_1')).resolves.toMatchObject({
       id: 'as_1',
-      revoked_at: null,
+      revokedAt: null,
     })
   })
 
@@ -149,10 +149,10 @@ describe('AgentsApi', () => {
 
     expect(policy).toEqual({
       id: 'ap_1',
-      allowed_tools: ['create_payment_order'],
-      require_approval: true,
-      created_at: '2026-07-01T00:00:00.000Z',
-      updated_at: '2026-07-01T00:00:00.000Z',
+      allowedTools: ['create_payment_order'],
+      requireApproval: true,
+      createdAt: '2026-07-01T00:00:00.000Z',
+      updatedAt: '2026-07-01T00:00:00.000Z',
     })
   })
 
@@ -181,7 +181,7 @@ describe('AgentsApi', () => {
       allowed_tools: ['create_payment_order'],
       require_approval: true,
     })
-    expect(policy.updated_at).toBe('2026-07-01T00:10:00.000Z')
+    expect(policy.updatedAt).toBe('2026-07-01T00:10:00.000Z')
   })
 
   it('列表 agent actions 时映射 sessionId 分页参数', async () => {
@@ -220,10 +220,10 @@ describe('AgentsApi', () => {
     expect(query.get('offset')).toBe('20')
     expect(actions.items[0]).toMatchObject({
       id: 'aa_1',
-      agent_session_id: 'as_1',
+      agentSessionId: 'as_1',
       tool: 'create_payment_order',
     })
-    expect(actions.has_more).toBe(false)
+    expect(actions.hasMore).toBe(false)
     expect(actions.total).toBe(1)
   })
 
@@ -279,7 +279,7 @@ describe('AgentsApi', () => {
     const action = await api.approveAction('aa_1', { approverId: 'user_1' })
 
     expect(requestBody).toEqual({ approver_id: 'user_1' })
-    expect(action).toMatchObject({ id: 'aa_1', status: 'approved', approver_id: 'user_1' })
+    expect(action).toMatchObject({ id: 'aa_1', status: 'approved', approverId: 'user_1' })
   })
 
   it('拒绝 agent action 时映射 approverId 和 reason 请求字段', async () => {
@@ -313,7 +313,7 @@ describe('AgentsApi', () => {
     expect(action).toMatchObject({
       id: 'aa_1',
       status: 'rejected',
-      error_message: 'out of policy',
+      errorMessage: 'out of policy',
     })
   })
 
@@ -350,7 +350,7 @@ describe('AgentsApi', () => {
     })
     expect(action).toMatchObject({
       id: 'aa_1',
-      agent_session_id: 'as_1',
+      agentSessionId: 'as_1',
       result: { payment_order_id: 'po_1' },
     })
   })

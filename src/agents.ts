@@ -15,15 +15,18 @@ export class AgentsApi {
   constructor(private readonly http: HttpClient) {}
 
   async createSession(input: CreateAgentSessionInput = {}): Promise<AgentSession> {
-    return this.http.request<AgentSession>({
+    const wire = await this.http.request<WireAgentSession>({
       method: 'POST',
       path: '/v1/agent/sessions',
       body: { label: input.label, expires_at: input.expiresAt },
     })
+    return fromWireSession(wire)
   }
 
-  async listSessions(params: { limit?: number; offset?: number } = {}): Promise<AgentPage<AgentSession>> {
-    return this.http.request<AgentPage<AgentSession>>({
+  async listSessions(
+    params: { limit?: number; offset?: number } = {},
+  ): Promise<AgentPage<AgentSession>> {
+    const wire = await this.http.request<WireAgentPage<WireAgentSession>>({
       method: 'GET',
       path: '/v1/agent/sessions',
       query: {
@@ -31,31 +34,35 @@ export class AgentsApi {
         offset: params.offset,
       },
     })
+    return fromWirePage(wire, fromWireSession)
   }
 
   async revokeSession(id: string): Promise<AgentSession> {
-    return this.http.request<AgentSession>({
+    const wire = await this.http.request<WireAgentSession>({
       method: 'POST',
       path: `/v1/agent/sessions/${encodeURIComponent(id)}/revoke`,
     })
+    return fromWireSession(wire)
   }
 
   async restoreSession(id: string): Promise<AgentSession> {
-    return this.http.request<AgentSession>({
+    const wire = await this.http.request<WireAgentSession>({
       method: 'POST',
       path: `/v1/agent/sessions/${encodeURIComponent(id)}/restore`,
     })
+    return fromWireSession(wire)
   }
 
   async getPolicy(): Promise<AgentPolicy> {
-    return this.http.request<AgentPolicy>({
+    const wire = await this.http.request<WireAgentPolicy>({
       method: 'GET',
       path: '/v1/agent/policy',
     })
+    return fromWirePolicy(wire)
   }
 
   async upsertPolicy(input: UpsertAgentPolicyInput): Promise<AgentPolicy> {
-    return this.http.request<AgentPolicy>({
+    const wire = await this.http.request<WireAgentPolicy>({
       method: 'POST',
       path: '/v1/agent/policy',
       body: {
@@ -63,6 +70,7 @@ export class AgentsApi {
         require_approval: input.requireApproval,
       },
     })
+    return fromWirePolicy(wire)
   }
 
   async requestAction(input: RequestAgentActionInput): Promise<RequestAgentActionResult> {
@@ -80,7 +88,7 @@ export class AgentsApi {
   async listActions(
     params: { sessionId?: string; limit?: number; offset?: number } = {},
   ): Promise<AgentPage<AgentAction>> {
-    return this.http.request<AgentPage<AgentAction>>({
+    const wire = await this.http.request<WireAgentPage<WireAgentAction>>({
       method: 'GET',
       path: '/v1/agent/actions',
       query: {
@@ -89,29 +97,32 @@ export class AgentsApi {
         offset: params.offset,
       },
     })
+    return fromWirePage(wire, fromWireAction)
   }
 
   async approveAction(id: string, input: { approverId?: string } = {}): Promise<AgentAction> {
-    return this.http.request<AgentAction>({
+    const wire = await this.http.request<WireAgentAction>({
       method: 'POST',
       path: `/v1/agent/actions/${encodeURIComponent(id)}/approve`,
       body: { approver_id: input.approverId },
     })
+    return fromWireAction(wire)
   }
 
   async rejectAction(
     id: string,
     input: { approverId?: string; reason?: string } = {},
   ): Promise<AgentAction> {
-    return this.http.request<AgentAction>({
+    const wire = await this.http.request<WireAgentAction>({
       method: 'POST',
       path: `/v1/agent/actions/${encodeURIComponent(id)}/reject`,
       body: { approver_id: input.approverId, reason: input.reason },
     })
+    return fromWireAction(wire)
   }
 
   async markExecuted(id: string, input: MarkAgentActionExecutedInput): Promise<AgentAction> {
-    return this.http.request<AgentAction>({
+    const wire = await this.http.request<WireAgentAction>({
       method: 'POST',
       path: `/v1/agent/actions/${encodeURIComponent(id)}/executed`,
       body: {
@@ -120,5 +131,85 @@ export class AgentsApi {
         error_message: input.errorMessage,
       },
     })
+    return fromWireAction(wire)
+  }
+}
+
+type WireAgentSession = {
+  id: string
+  label: string | null
+  created_at: string
+  expires_at: string | null
+  revoked_at: string | null
+}
+
+type WireAgentPolicy = {
+  id: string
+  allowed_tools: string[]
+  require_approval: boolean
+  created_at: string
+  updated_at: string
+}
+
+type WireAgentAction = {
+  id: string
+  agent_session_id: string
+  tool: string
+  input: unknown
+  status: string
+  approver_id: string | null
+  decided_at: string | null
+  executed_at: string | null
+  result: unknown
+  error_message: string | null
+  created_at: string
+}
+
+type WireAgentPage<T> = { items: T[]; has_more: boolean; total: number }
+
+function fromWireSession(wire: WireAgentSession): AgentSession {
+  return {
+    id: wire.id,
+    label: wire.label,
+    createdAt: wire.created_at,
+    expiresAt: wire.expires_at,
+    revokedAt: wire.revoked_at,
+  }
+}
+
+function fromWirePolicy(wire: WireAgentPolicy): AgentPolicy {
+  return {
+    id: wire.id,
+    allowedTools: wire.allowed_tools,
+    requireApproval: wire.require_approval,
+    createdAt: wire.created_at,
+    updatedAt: wire.updated_at,
+  }
+}
+
+function fromWireAction(wire: WireAgentAction): AgentAction {
+  return {
+    id: wire.id,
+    agentSessionId: wire.agent_session_id,
+    tool: wire.tool,
+    input: wire.input,
+    status: wire.status,
+    approverId: wire.approver_id,
+    decidedAt: wire.decided_at,
+    executedAt: wire.executed_at,
+    result: wire.result,
+    errorMessage: wire.error_message,
+    createdAt: wire.created_at,
+  }
+}
+
+function fromWirePage<TWire, T>(
+  wire: WireAgentPage<TWire>,
+  fromWire: (item: TWire) => T,
+): AgentPage<T> {
+  return {
+    items: wire.items.map(fromWire),
+    hasMore: wire.has_more,
+    total: wire.total,
   }
 }
