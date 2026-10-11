@@ -3,6 +3,7 @@ import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { HttpClient } from './http'
+import type { WebhookEventType } from './types'
 import { WebhooksApi } from './webhooks'
 
 const BASE_URL = 'https://api.test.local'
@@ -15,6 +16,34 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('WebhooksApi', () => {
+  it('支持退款、Agent Payments 和订阅事件', async () => {
+    const events: WebhookEventType[] = [
+      'refund.confirmed',
+      'agent_payment.settlement.settled',
+      'end_user_subscription.created',
+      'end_user_invoice.paid',
+    ]
+    server.use(
+      http.post(ENDPOINTS, async ({ request }) => {
+        expect(await request.json()).toMatchObject({ enabled_events: events })
+        return HttpResponse.json({
+          id: 'we_1',
+          url: 'https://example.com/webhooks',
+          description: null,
+          enabled_events: events,
+          redact_metadata: false,
+          disabled_at: null,
+          created_at: '2026-10-11T00:00:00.000Z',
+        })
+      }),
+    )
+    const endpoint = await new WebhooksApi(new HttpClient({ baseUrl: BASE_URL })).createEndpoint({
+      url: 'https://example.com/webhooks',
+      enabledEvents: events,
+    })
+    expect(endpoint.enabledEvents).toEqual(events)
+  })
+
   it('创建端点时发送 redact_metadata 并映射响应字段', async () => {
     let requestBody: unknown
     server.use(

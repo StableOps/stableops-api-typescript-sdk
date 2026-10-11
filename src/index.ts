@@ -3,6 +3,8 @@ import { AgentsApi } from './agents'
 import { HttpClient, type ClientOptions } from './http'
 import { MerchantPortalApi, MerchantSubscriptionsApi } from './merchant-subscriptions'
 import { CheckoutSessionsApi, PaymentOrdersApi } from './payment-orders'
+import { PaymentLinksApi } from './payment-links'
+import { RefundsApi } from './refunds'
 import { WebhooksApi } from './webhooks'
 
 export * from './types'
@@ -43,6 +45,8 @@ export class StableOps {
   readonly addresses: AddressesApi
   readonly merchantSubscriptions: MerchantSubscriptionsApi
   readonly paymentOrders: PaymentOrdersApi
+  readonly paymentLinks: PaymentLinksApi
+  readonly refunds: RefundsApi
   readonly checkoutSessions: CheckoutSessionsApi
   readonly webhooks: WebhooksApi
   readonly agents: AgentsApi
@@ -53,6 +57,8 @@ export class StableOps {
     this.addresses = new AddressesApi(http)
     this.merchantSubscriptions = new MerchantSubscriptionsApi(http)
     this.paymentOrders = new PaymentOrdersApi(http)
+    this.paymentLinks = new PaymentLinksApi(http)
+    this.refunds = new RefundsApi(http)
     this.checkoutSessions = new CheckoutSessionsApi(http, {
       checkoutBaseUrl: options.checkoutBaseUrl,
     })

@@ -11,13 +11,13 @@ StableOps watches supported chains, matches transfers, tracks confirmations,
 checks reorgs, and delivers webhook events to your application.
 
 This SDK is intended for server-side TypeScript and JavaScript applications that
-create payment orders, query normalized chain events, manage webhook endpoints,
-and verify webhook signatures.
+create payment orders and checkout sessions, manage receiving addresses, refunds,
+payment links, merchant subscriptions and agent audit resources, and verify webhook signatures.
 
 ## Features
 
-- Type-safe client for payment orders, events, and webhook endpoints.
-- Built-in request retry behavior for transient failures.
+- Type-safe client for payment orders, checkout sessions, addresses, refunds, payment links, merchant subscriptions, agent audit resources, and webhooks.
+- Retries for reads and explicitly idempotent payment-order and checkout-session creation. Other writes are not retried automatically.
 - Explicit idempotency support for write operations.
 - Constant-time webhook signature verification.
 - In-process mock server for tests, examples, and local demos.
@@ -84,6 +84,45 @@ provide `fetch`, `AbortController`, and Web Crypto `getRandomValues`.
 Return only the order id, amount, and `paymentInstructions` to your frontend.
 The actual API key and order creation flow should stay on your server.
 
+## Resources
+
+| Resource                | Operations                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `paymentOrders`         | Create, retrieve, list, and cancel orders                                    |
+| `checkoutSessions`      | Create hosted checkout sessions                                              |
+| `addresses`             | Import and manage receiving addresses                                        |
+| `refunds`               | Create, retrieve, list, submit a transaction, and cancel refunds             |
+| `paymentLinks`          | Create, list, update, and inspect associated orders                          |
+| `merchantSubscriptions` | Manage plans, subscriptions, invoices, billing settings, and portal sessions |
+| `agents`                | Manage agent sessions, policies, approval requests, and audit results        |
+| `webhooks`              | Manage endpoints, inspect deliveries, and replay events                      |
+| `portal(token)`         | Access end-user subscription and invoice operations using a portal token     |
+
+Refund requests do not move funds. The merchant signs and broadcasts the refund
+transfer, then registers its transaction hash for tracking:
+
+```ts
+const refund = await stableops.refunds.create({
+  paymentOrderId: 'po_123',
+  amount: '5.00',
+  destinationAddress: '0x0000000000000000000000000000000000000001',
+})
+await stableops.refunds.submit(refund.id, { txHash: merchantSignedTransactionHash })
+
+const link = await stableops.paymentLinks.create({
+  title: 'Pro plan',
+  amount: '49.00',
+  acceptedAssets: [{ chain: 'base-sepolia', asset: 'USDC' }],
+  payerFields: ['email', 'reference'],
+})
+const page = await stableops.paymentLinks.orders(link.id, { limit: 20 })
+```
+
+`listPage()` returns `items`, `hasMore`, and `total`. `paymentLinks.orders()` also
+returns the link configuration, payer details, payment transactions, and completed-order count.
+Webhook subscriptions accept payment, refund, merchant subscription, invoice,
+agent audit, and Agent Payments events.
+
 ## Documentation
 
 For complete guides, API references, payment lifecycle details, webhook
@@ -96,7 +135,7 @@ verification, and wallet integration examples, see the official documentation:
 
 This SDK supports:
 
-- Chains: Ethereum, Base, Arbitrum, Polygon, TRON, Solana, and supported testnets.
+- Chains: Ethereum, Base, Arbitrum, Polygon, Optimism, BSC, TRON, Solana, and supported testnets.
 - Assets: USDC and USDT.
 
 StableOps may support a subset of chain/asset pairs per environment and

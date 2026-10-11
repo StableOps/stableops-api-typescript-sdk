@@ -37,11 +37,40 @@ export type WebhookEventType =
   | 'payment.reverted'
   | 'payment.expired'
   | 'payment_order.canceled'
+  | 'refund.requested'
+  | 'refund.submitted'
+  | 'refund.confirmed'
+  | 'refund.failed'
   | 'address.pool.low'
   | 'webhook.delivery.failed'
   | 'agent.action.requested'
   | 'agent.action.approved'
   | 'agent.action.executed'
+  | 'agent_payment.intent.created'
+  | 'agent_payment.intent.awaiting_approval'
+  | 'agent_payment.approval.approved'
+  | 'agent_payment.approval.rejected'
+  | 'agent_payment.approval.expired'
+  | 'agent_payment.authorization.issued'
+  | 'agent_payment.authorization.expired'
+  | 'agent_payment.settlement.unknown'
+  | 'agent_payment.settlement.settled'
+  | 'agent_payment.settlement.reverted'
+  | 'agent_payment.resource.succeeded'
+  | 'agent_payment.resource.failed'
+  | 'agent_payment.resource.unknown'
+  | 'agent_payment.agent.paused'
+  | 'agent_payment.organization.paused'
+  | 'end_user_subscription.created'
+  | 'end_user_subscription.activated'
+  | 'end_user_subscription.renewed'
+  | 'end_user_subscription.canceled'
+  | 'end_user_subscription.expired'
+  | 'end_user_subscription.past_due'
+  | 'end_user_invoice.open'
+  | 'end_user_invoice.paid'
+  | 'end_user_invoice.payment_failed'
+  | 'end_user_invoice.payment_late'
 
 export type WebhookDeliveryStatus = 'pending' | 'succeeded' | 'failed' | 'dead_letter'
 
@@ -381,4 +410,111 @@ export type MerchantInvoiceCheckoutSession = {
   clientSecret: string
   checkoutUrl: string
   paymentOrder: PaymentOrder
+}
+
+export type RefundStatus = 'requested' | 'submitted' | 'confirmed' | 'failed' | 'canceled'
+
+export type CreateRefundInput = {
+  paymentOrderId: string
+  amount: string
+  destinationAddress: string
+}
+
+export type Refund = {
+  id: string
+  paymentOrderId: string
+  sourcePaymentEventId: string
+  chain: ChainId
+  asset: Asset
+  amount: string
+  amountMinor: string
+  sourceAddress: string
+  destinationAddress: string
+  status: RefundStatus
+  txHash: string | null
+  failureReason: string | null
+  submittedAt: string | null
+  confirmedAt: string | null
+  canceledAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ListRefundsParams = {
+  paymentOrderId?: string
+  status?: RefundStatus
+  limit?: number
+  offset?: number
+}
+
+export type RefundListPage = { items: Refund[]; hasMore: boolean; total: number }
+
+export type PaymentLinkPayerField = 'name' | 'email' | 'reference' | 'note'
+export type PaymentLinkPayer = Partial<Record<PaymentLinkPayerField, string>>
+export type PaymentLinkStatus = 'active' | 'inactive'
+
+export type CreatePaymentLinkInput = {
+  title: string
+  description?: string
+  amount: string
+  amountMode?: 'exact' | 'auto'
+  settlementAsset?: Asset
+  acceptedAssets: AcceptedAssetInput[]
+  successUrl?: string
+  cancelUrl?: string
+  walletConnectProjectId?: string
+  expiresInMinutes?: number
+  payerFields?: PaymentLinkPayerField[]
+}
+
+export type UpdatePaymentLinkInput = {
+  title?: string
+  description?: string | null
+  status?: PaymentLinkStatus
+  successUrl?: string | null
+  cancelUrl?: string | null
+  expiresInMinutes?: number
+  payerFields?: PaymentLinkPayerField[]
+}
+
+export type PaymentLink = {
+  id: string
+  slug: string
+  title: string
+  description: string | null
+  amount: string
+  amountMode: 'exact' | 'auto'
+  settlementAsset: Asset | null
+  acceptedAssets: AcceptedAssetInput[]
+  successUrl: string | null
+  cancelUrl: string | null
+  walletConnectProjectId: string | null
+  expiresInMinutes: number
+  payerFields?: PaymentLinkPayerField[]
+  status: PaymentLinkStatus
+  checkoutCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type ListPaymentLinksParams = { limit?: number; offset?: number }
+export type PaymentLinkListPage = { items: PaymentLink[]; hasMore: boolean; total: number }
+export type ListPaymentLinkOrdersParams = ListPaymentLinksParams & { status?: PaymentOrderStatus }
+
+export type PaymentLinkOrder = {
+  id: string
+  merchantOrderId: string
+  amount: string
+  status: PaymentOrderStatus
+  createdAt: string
+  payer: PaymentLinkPayer | null
+  payments: { chain: string; asset: Asset; amount: string; txHash: string }[]
+}
+
+export type PaymentLinkOrdersPage = {
+  link: PaymentLink
+  items: PaymentLinkOrder[]
+  total: number
+  hasMore: boolean
+  completed: number
 }
