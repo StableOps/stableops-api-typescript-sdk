@@ -108,6 +108,8 @@ export class WebhooksApi {
       path: '/v1/webhook-deliveries',
       query: {
         status: params.status,
+        delivery_id: params.deliveryId,
+        replay_of_delivery_id: params.replayOfDeliveryId,
         endpoint_id: params.endpointId,
         payment_order_id: params.paymentOrderId,
         limit: params.limit,
@@ -156,6 +158,8 @@ export type WebhookEndpointListPage = {
 }
 
 export type ListWebhookDeliveriesParams = {
+  deliveryId?: string
+  replayOfDeliveryId?: string
   status?: WebhookDeliveryStatus
   endpointId?: string
   paymentOrderId?: string
@@ -182,6 +186,7 @@ type WireWebhookEndpoint = {
 
 type WireWebhookDelivery = {
   id: string
+  replay_of_delivery_id?: string | null
   webhook_endpoint_id: string
   event_id: string
   event_type: WebhookEventType
@@ -221,6 +226,7 @@ function fromWire(wire: WireWebhookEndpoint): WebhookEndpoint {
 function fromWireDelivery(wire: WireWebhookDelivery): WebhookDelivery {
   return {
     id: wire.id,
+    replayOfDeliveryId: wire.replay_of_delivery_id ?? null,
     webhookEndpointId: wire.webhook_endpoint_id,
     eventId: wire.event_id,
     eventType: wire.event_type,

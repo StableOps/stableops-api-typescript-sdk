@@ -168,6 +168,8 @@ export type UpdateWebhookEndpointInput = {
 
 export type WebhookDelivery = {
   id: string
+  // 直接来源投递。首次投递和历史无关联记录为空。
+  replayOfDeliveryId?: string | null
   webhookEndpointId: string
   eventId: string
   eventType: WebhookEventType

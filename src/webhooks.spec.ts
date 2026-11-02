@@ -156,6 +156,7 @@ describe('WebhooksApi', () => {
           items: [
             {
               id: 'del_1',
+              replay_of_delivery_id: 'del_original',
               webhook_endpoint_id: 'we_1',
               event_id: 'evt_1',
               event_type: 'payment.confirmed',
@@ -180,6 +181,8 @@ describe('WebhooksApi', () => {
 
     const api = new WebhooksApi(new HttpClient({ baseUrl: BASE_URL }))
     const deliveries = await api.listDeliveries({
+      deliveryId: 'del_1',
+      replayOfDeliveryId: 'del_original',
       status: 'succeeded',
       endpointId: 'we_1',
       paymentOrderId: 'po_1',
@@ -187,9 +190,12 @@ describe('WebhooksApi', () => {
     })
 
     const query = new URL(requestUrl).searchParams
+    expect(query.get('delivery_id')).toBe('del_1')
+    expect(query.get('replay_of_delivery_id')).toBe('del_original')
     expect(query.get('endpoint_id')).toBe('we_1')
     expect(query.get('payment_order_id')).toBe('po_1')
     expect(deliveries[0]).toMatchObject({
+      replayOfDeliveryId: 'del_original',
       webhookEndpointId: 'we_1',
       eventId: 'evt_1',
       responseDurationMs: 42,
